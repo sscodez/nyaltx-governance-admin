@@ -153,44 +153,44 @@ export const MENU_ITEMS: MenuItemType[] = [
   //     },
   //   ],
   // },
-  {
-    key: 'page-authentication',
-    label: 'Authentication',
-    isTitle: false,
-    icon: 'ri:account-circle-line',
-    children: [
-      {
-        key: 'sign-in',
-        label: 'Login',
-        url: '/auth/login',
-        parentKey: 'page-authentication',
-      },
-      {
-        key: 'signup',
-        label: 'Register',
-        url: '/auth/register',
-        parentKey: 'page-authentication',
-      },
-      {
-        key: 'logout',
-        label: 'Logout',
-        url: '/auth/logout',
-        parentKey: 'page-authentication',
-      },
-      {
-        key: 'reset-pass',
-        label: 'Forgot Password',
-        url: '/auth/forgot-pass',
-        parentKey: 'page-authentication',
-      },
-      {
-        key: 'lock-screen',
-        label: 'Lock Screen',
-        url: '/auth/lock-screen',
-        parentKey: 'page-authentication',
-      },
-    ],
-  },
+  // {
+  //   key: 'page-authentication',
+  //   label: 'Authentication',
+  //   isTitle: false,
+  //   icon: 'ri:account-circle-line',
+  //   children: [
+  //     {
+  //       key: 'sign-in',
+  //       label: 'Login',
+  //       url: '/auth/login',
+  //       parentKey: 'page-authentication',
+  //     },
+  //     {
+  //       key: 'signup',
+  //       label: 'Register',
+  //       url: '/auth/register',
+  //       parentKey: 'page-authentication',
+  //     },
+  //     {
+  //       key: 'logout',
+  //       label: 'Logout',
+  //       url: '/auth/logout',
+  //       parentKey: 'page-authentication',
+  //     },
+  //     {
+  //       key: 'reset-pass',
+  //       label: 'Forgot Password',
+  //       url: '/auth/forgot-pass',
+  //       parentKey: 'page-authentication',
+  //     },
+  //     {
+  //       key: 'lock-screen',
+  //       label: 'Lock Screen',
+  //       url: '/auth/lock-screen',
+  //       parentKey: 'page-authentication',
+  //     },
+  //   ],
+  // },
   {
     key: 'components',
     label: 'Components',

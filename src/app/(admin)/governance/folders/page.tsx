@@ -479,19 +479,20 @@ const FolderRegistryPage = () => {
                       >
                         Fund Folder
                       </Button>
-                      <Button
-                        variant={folder.isApproved ? 'soft-secondary' : 'soft-warning'}
-                        className="flex-grow-1"
-                        disabled={folder.isApproved}
-                        onClick={() =>
-                          setApproveModal({
-                            show: true,
-                            folder,
-                          })
-                        }
-                      >
-                        {folder.isApproved ? 'Approved' : 'Approve Folder'}
-                      </Button>
+                      {!folder.isApproved && (
+                        <Button
+                          variant="soft-warning"
+                          className="flex-grow-1"
+                          onClick={() =>
+                            setApproveModal({
+                              show: true,
+                              folder,
+                            })
+                          }
+                        >
+                          Approve Folder
+                        </Button>
+                      )}
                     </div>
                   </Card.Body>
                 </Card>

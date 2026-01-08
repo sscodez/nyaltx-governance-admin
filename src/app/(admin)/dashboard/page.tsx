@@ -34,6 +34,12 @@ const truncateAddress = (address?: string) => {
   return `${address.slice(0, 6)}…${address.slice(-4)}`
 }
 
+const truncateText = (value?: string, limit = 120) => {
+  if (!value) return ''
+  if (value.length <= limit) return value
+  return `${value.slice(0, limit)}…`
+}
+
 const Dashboard = () => {
   const { daoService, loading } = useDaoService()
   const { showNotification } = useNotificationContext()
@@ -387,7 +393,7 @@ const Dashboard = () => {
                     <div className="flex-grow-1">
                       <p className="text-muted fs-12 mb-1">#{shortenId(proposal.id)}</p>
                       <h6 className="mb-1 text-truncate">{proposal.title || 'Untitled proposal'}</h6>
-                      <p className="text-muted mb-2 small text-truncate">{proposal.description || 'No description provided'}</p>
+                      <p className="text-muted mb-2 small">{truncateText(proposal.description || 'No description provided')}</p>
                     </div>
                     <Badge bg="soft-primary" text="primary" className="text-uppercase">
                       {proposal.status}
