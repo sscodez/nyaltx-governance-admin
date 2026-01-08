@@ -191,10 +191,14 @@ export interface GovernanceStats {
 }
 
 export interface TreasuryStats {
-  totalBalance: string;
-  totalAllocated: number;
-  categoriesCount: number;
-  multisigThreshold: string;
+  treasuryBalance: string;
+  totalFolders: number;
+  approvedFolders: number;
+  isPaused: boolean;
+  totalBalance?: string;
+  totalAllocated?: number;
+  categoriesCount?: number;
+  multisigThreshold?: string;
 }
 
 export interface ContractError {

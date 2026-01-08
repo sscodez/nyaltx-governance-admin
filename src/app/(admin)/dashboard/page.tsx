@@ -10,7 +10,7 @@ import IconifyIcon from '@/components/wrappers/IconifyIcon'
 import PageTitle from '@/components/PageTitle'
 import { useNotificationContext } from '@/context/useNotificationContext'
 import useDaoService from '@/hooks/useDaoService'
-import type { FolderInfo, GovernanceStats, ProposalData, TreasuryStats } from '@/services/contracts'
+import type { FolderInfo, GovernanceStats, ProposalData } from '@/services/contracts'
 import { NETWORK_CONFIG } from '@/services/contracts'
 
 const formatNumber = (value: string | number, digits = 1) => {
@@ -40,6 +40,13 @@ const truncateText = (value?: string, limit = 120) => {
   return `${value.slice(0, limit)}…`
 }
 
+type AdminTreasuryStats = {
+  treasuryBalance: string
+  totalFolders: number
+  approvedFolders: number
+  isPaused: boolean
+}
+
 const Dashboard = () => {
   const { daoService, loading } = useDaoService()
   const { showNotification } = useNotificationContext()
@@ -49,7 +56,7 @@ const Dashboard = () => {
   const [folders, setFolders] = useState<FolderInfo[]>([])
   const [blockTimestamps, setBlockTimestamps] = useState<Record<number, number>>({})
   const [fetching, setFetching] = useState(false)
-  const [treasuryStats, setTreasuryStats] = useState<TreasuryStats | null>(null)
+  const [treasuryStats, setTreasuryStats] = useState<AdminTreasuryStats | null>(null)
 
   const loadDashboard = useCallback(async () => {
     if (!daoService) return
@@ -64,7 +71,12 @@ const Dashboard = () => {
       setGovStats(statsResponse)
       setRecentProposals(proposalsResponse)
       setFolders(foldersResponse)
-      setTreasuryStats(treasuryResponse)
+      setTreasuryStats({
+        treasuryBalance: treasuryResponse.treasuryBalance,
+        totalFolders: treasuryResponse.totalFolders,
+        approvedFolders: treasuryResponse.approvedFolders,
+        isPaused: treasuryResponse.isPaused,
+      })
     } catch (error: any) {
       showNotification({ message: error?.message || 'Unable to load dashboard insights', variant: 'danger' })
     } finally {
