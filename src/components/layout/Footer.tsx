@@ -7,7 +7,7 @@ const Footer = () => {
       <Container fluid>
         <Row>
           <Col xs={12} className="text-center">
-            {currentYear} © Techmin - Theme by <b>{developedBy}</b>
+            {currentYear} © NYAX Admin · Powered by <b>{developedBy}</b>
           </Col>
         </Row>
       </Container>

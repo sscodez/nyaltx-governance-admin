@@ -44,7 +44,7 @@ const LayoutProvider = ({ children }: ChildrenType) => {
     mode: params['layout_mode'] ? (params['layout_mode'] as LayoutModeType) : 'fluid',
   }
 
-  const [settings, setSettings] = useLocalStorage<LayoutState>('__TECHMIN_NEXT_CONFIG__', INIT_STATE, override)
+  const [settings, setSettings] = useLocalStorage<LayoutState>('__NYAX_ADMIN_CONFIG__', INIT_STATE, override)
   const [offcanvasStates, setOffcanvasStates] = useState<LayoutOffcanvasStatesType>({
     showThemeCustomizer: false,
     showBackdrop: false,

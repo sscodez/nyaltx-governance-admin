@@ -17,10 +17,10 @@ import AppProvidersWrapper from '@/components/wrappers/AppProvidersWrapper'
 
 export const metadata: Metadata = {
   title: {
-    template: '%s |Techmin - Bootstrap 5 Admin & Dashboard Template',
+    template: '%s | NYAX Admin',
     default: DEFAULT_PAGE_TITLE,
   },
-  description: 'A fully responsive admin theme which can be used to build CRM, CMS,ERP etc.',
+  description: 'NYAX Admin – governance dashboard for treasury, proposals, and on-chain operations.',
 }
 
 const splashScreenStyles = `

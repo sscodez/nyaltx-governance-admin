@@ -34,7 +34,7 @@ export const WalletProvider = ({ children }: ChildrenType) => {
         if (!sdkRef.current) {
           sdkRef.current = new MetaMaskSDK({
             dappMetadata: {
-              name: 'Techmin Admin',
+              name: 'NYAX Admin',
               url: window.location.origin,
             },
           })

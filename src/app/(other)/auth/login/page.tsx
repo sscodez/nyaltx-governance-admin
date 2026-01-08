@@ -1,11 +1,8 @@
 import type { Metadata } from 'next'
-import Image from 'next/image'
 import { Card, Col, Container, Row } from 'react-bootstrap'
 
 import AuthLogo from '@/components/AuthLogo'
 import LoginForm from './components/LoginForm'
-
-import authImg from '@/assets/images/auth-img.jpg'
 
 export const metadata: Metadata = { title: 'Connect Wallet' }
 
@@ -14,28 +11,31 @@ const Login = () => {
     <div className="account-pages p-sm-5 position-relative">
       <Container>
         <Row className="justify-content-center">
-          <Col xxl={9} lg={10}>
-            <Card className="overflow-hidden">
-              <Row className="g-0">
-                <Col lg={6} className="bg-body">
-                  <div className="d-flex flex-column h-100">
-                    <AuthLogo />
-                    <div className="p-4 my-auto text-center">
-                      <h4 className="fs-20 mb-2">Connect your wallet</h4>
-                      <p className="text-muted mb-4">
-                        Governance access is now protected with MetaMask. Connect your wallet to continue to the dashboard.
-                      </p>
-                      <LoginForm />
-                    </div>
+          <Col xxl={7} lg={8}>
+            <Card className="border-0 shadow-lg">
+              <Card.Body className="p-4 p-md-5">
+                <div className="text-center mb-4">
+                  <AuthLogo />
+                </div>
+                <div className="text-center">
+                  <h4 className="fw-semibold mb-2">Connect your wallet</h4>
+                  <p className="text-muted mb-4">
+                    Secure, passwordless access to the NYAX governance console. Connect your MetaMask wallet to continue.
+                  </p>
+                </div>
+                <LoginForm />
+                <div className="mt-4">
+                  <div className="d-flex align-items-center gap-2 mb-3">
+                    <span className="badge bg-soft-primary text-primary rounded-pill px-3 py-2 fw-semibold">Why wallet login?</span>
+                    <span className="text-muted small">Real-time verification · No passwords</span>
                   </div>
-                </Col>
-                <Col lg={6} className="d-none d-lg-block">
-                  <div className="h-100 position-relative">
-                    <Image src={authImg} alt="MetaMask authentication illustration" className="img-fluid h-100 w-100 object-fit-cover" priority />
-                    <div className="position-absolute top-0 start-0 w-100 h-100 bg-dark-subtle opacity-25" />
-                  </div>
-                </Col>
-              </Row>
+                  <ul className="list-unstyled text-muted mb-0">
+                    <li className="mb-1">• Sign transactions and proposals directly on-chain</li>
+                    <li className="mb-1">• Stay synced with treasury + folder permissions</li>
+                    <li>• Works on desktop and MetaMask mobile browser</li>
+                  </ul>
+                </div>
+              </Card.Body>
             </Card>
           </Col>
         </Row>
