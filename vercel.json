@@ -1,0 +1,9 @@
+{
+  "version": 2,
+  "framework": "nextjs",
+  "buildCommand": "yarn run build",
+  "installCommand": "yarn install --frozen-lockfile",
+  "env": {
+    "NEXT_TELEMETRY_DISABLED": "1"
+  }
+}
