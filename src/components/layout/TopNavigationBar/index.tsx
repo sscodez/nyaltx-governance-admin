@@ -41,9 +41,9 @@ const TopNavigationBar = () => {
           </Dropdown>
           <LanguageDropdown />
 
-          <MessagesDropdown messages={messages} />
+          {/* <MessagesDropdown messages={messages} /> */}
 
-          <NotificationDropdown notifications={notifications} />
+          {/* <NotificationDropdown notifications={notifications} /> */}
 
           <ThemeCustomizerToggle />
 
