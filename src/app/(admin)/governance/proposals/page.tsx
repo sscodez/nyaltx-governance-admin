@@ -190,6 +190,7 @@ const ProposalsPage = () => {
       return null
     }
   }, [])
+
   const resolveActionPayload = (action: ProposalActionState) => {
     if (action.presetKey) {
       const preset = getPresetByKey(action.presetKey)
