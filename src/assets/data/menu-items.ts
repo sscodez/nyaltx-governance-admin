@@ -191,11 +191,11 @@ export const MENU_ITEMS: MenuItemType[] = [
   //     },
   //   ],
   // },
-  {
-    key: 'components',
-    label: 'Components',
-    isTitle: true,
-  },
+  // {
+  //   key: 'components',
+  //   label: 'Components',
+  //   isTitle: true,
+  // },
   // {
   //   key: 'base-ui',
   //   icon: 'ri:briefcase-line',
