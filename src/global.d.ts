@@ -1,6 +1,13 @@
+import type { ReactNode } from 'react'
 import type { StaticImageData } from 'next/image'
 
-declare module 'google-maps-react'
+declare module 'google-maps-react' {
+  interface IMapProps {
+    children?: ReactNode
+    styles?: unknown
+  }
+}
+
 declare module 'react-easy-edit'
 
 declare module '*.jpg' {
