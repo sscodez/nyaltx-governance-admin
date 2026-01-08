@@ -1,8 +1,8 @@
-const ReactApexChart = dynamic(() => import('react-apexcharts'), { ssr: false })
 'use client'
 
-import { useCallback, useEffect, useMemo, useState } from 'react'
 import dynamic from 'next/dynamic'
+
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Alert, Badge, Button, Card, Col, ProgressBar, Row, Spinner } from 'react-bootstrap'
 import { ethers } from 'ethers'
 import type { ApexOptions } from 'apexcharts'
@@ -13,6 +13,8 @@ import { useNotificationContext } from '@/context/useNotificationContext'
 import useDaoService from '@/hooks/useDaoService'
 import type { FolderInfo, GovernanceStats, ProposalData } from '@/services/contracts'
 import { NETWORK_CONFIG } from '@/services/contracts'
+
+const ReactApexChart = dynamic(() => import('react-apexcharts'), { ssr: false })
 
 const formatNumber = (value: string | number, digits = 1) => {
   const numeric = Number(value)
