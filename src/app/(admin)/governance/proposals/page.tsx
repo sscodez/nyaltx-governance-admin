@@ -1,4 +1,4 @@
-'use client'
+  'use client'
 
 import { useEffect, useMemo, useState } from 'react'
 import { Alert, Badge, Button, Card, Col, Form, Modal, Row, Spinner, Table } from 'react-bootstrap'
@@ -7,6 +7,7 @@ import { ethers } from 'ethers'
 import PageTitle from '@/components/PageTitle'
 import { useNotificationContext } from '@/context/useNotificationContext'
 import useDaoService from '@/hooks/useDaoService'
+import { CONTRACT_ABIS, CONTRACT_ADDRESSES } from '@/services/contracts'
 import type { GovernanceStats, ProposalData } from '@/services/contracts'
 
 const defaultProposalForm = {
@@ -29,11 +30,141 @@ type ProposalAction = {
   calldata: string
 }
 
-const emptyAction: ProposalAction = {
+type PresetField = {
+  name: string
+  label: string
+  placeholder?: string
+  type?: 'text' | 'number'
+  helper?: string
+}
+
+type ActionPreset = {
+  key: string
+  label: string
+  description?: string
+  fields?: PresetField[]
+  encode: (params: Record<string, string>, iface: ethers.Interface) => { target: string; value: string; calldata: string }
+}
+
+function ensureAddress(value: string | undefined, label: string) {
+  const trimmed = value?.trim()
+  if (!trimmed || !ethers.isAddress(trimmed)) {
+    throw new Error(`Enter a valid ${label}.`)
+  }
+  return trimmed
+}
+
+function parseTokenAmount(value: string | undefined) {
+  const trimmed = value?.trim()
+  if (!trimmed) {
+    throw new Error('Amount is required.')
+  }
+  try {
+    return ethers.parseUnits(trimmed, 18)
+  } catch {
+    throw new Error('Enter a valid numeric amount.')
+  }
+}
+
+const ACTION_PRESETS: ActionPreset[] = [
+  {
+    key: 'enableTransfers',
+    label: 'NYAX: Enable transfers',
+    description: 'setTransfersEnabled(true)',
+    encode: (_params, iface) => ({
+      target: CONTRACT_ADDRESSES.nyaxToken ?? ethers.ZeroAddress,
+      value: '0',
+      calldata: iface.encodeFunctionData('setTransfersEnabled', [true]),
+    }),
+  },
+  {
+    key: 'disableTransfers',
+    label: 'NYAX: Disable transfers',
+    description: 'setTransfersEnabled(false)',
+    encode: (_params, iface) => ({
+      target: CONTRACT_ADDRESSES.nyaxToken ?? ethers.ZeroAddress,
+      value: '0',
+      calldata: iface.encodeFunctionData('setTransfersEnabled', [false]),
+    }),
+  },
+  {
+    key: 'transferTokens',
+    label: 'NYAX: Transfer tokens',
+    description: 'transfer(address to, uint256 amount)',
+    fields: [
+      { name: 'recipient', label: 'Recipient address', placeholder: '0xabc...' },
+      { name: 'amount', label: 'Amount (NYAX)', placeholder: '1000' },
+    ],
+    encode: (params, iface) => ({
+      target: CONTRACT_ADDRESSES.nyaxToken ?? ethers.ZeroAddress,
+      value: '0',
+      calldata: iface.encodeFunctionData('transfer', [
+        ensureAddress(params.recipient, 'recipient address'),
+        parseTokenAmount(params.amount),
+      ]),
+    }),
+  },
+  {
+    key: 'mintTokens',
+    label: 'NYAX: Mint tokens',
+    description: 'mint(address to, uint256 amount)',
+    fields: [
+      { name: 'recipient', label: 'Recipient address', placeholder: '0xabc...' },
+      { name: 'amount', label: 'Amount (NYAX)', placeholder: '5000' },
+    ],
+    encode: (params, iface) => ({
+      target: CONTRACT_ADDRESSES.nyaxToken ?? ethers.ZeroAddress,
+      value: '0',
+      calldata: iface.encodeFunctionData('mint', [
+        ensureAddress(params.recipient, 'recipient address'),
+        parseTokenAmount(params.amount),
+      ]),
+    }),
+  },
+  {
+    key: 'burnTokens',
+    label: 'NYAX: Burn tokens',
+    description: 'burn(address from, uint256 amount)',
+    fields: [
+      { name: 'holder', label: 'Holder address', placeholder: '0xabc...' },
+      { name: 'amount', label: 'Amount (NYAX)', placeholder: '2500' },
+    ],
+    encode: (params, iface) => ({
+      target: CONTRACT_ADDRESSES.nyaxToken ?? ethers.ZeroAddress,
+      value: '0',
+      calldata: iface.encodeFunctionData('burn', [
+        ensureAddress(params.holder, 'holder address'),
+        parseTokenAmount(params.amount),
+      ]),
+    }),
+  },
+  {
+    key: 'burnSelf',
+    label: 'NYAX: Burn treasury balance',
+    description: 'burnSelf(uint256 amount)',
+    fields: [{ name: 'amount', label: 'Amount (NYAX)', placeholder: '750' }],
+    encode: (params, iface) => ({
+      target: CONTRACT_ADDRESSES.nyaxToken ?? ethers.ZeroAddress,
+      value: '0',
+      calldata: iface.encodeFunctionData('burnSelf', [parseTokenAmount(params.amount)]),
+    }),
+  },
+]
+
+type ProposalActionState = ProposalAction & {
+  presetKey?: string
+  presetInputs?: Record<string, string>
+}
+
+const emptyAction: ProposalActionState = {
   target: '',
   value: '0',
   calldata: '0x',
+  presetKey: undefined,
+  presetInputs: undefined,
 }
+
+const getPresetByKey = (key?: string) => (key ? ACTION_PRESETS.find((preset) => preset.key === key) : undefined)
 
 const ProposalsPage = () => {
   const { daoService, loading: serviceLoading, error: serviceError } = useDaoService()
@@ -48,8 +179,58 @@ const ProposalsPage = () => {
   const [submitting, setSubmitting] = useState(false)
   const [detailModal, setDetailModal] = useState(false)
   const [selectedProposal, setSelectedProposal] = useState<ProposalData | null>(null)
-  const [actions, setActions] = useState<ProposalAction[]>([emptyAction])
+  const [actions, setActions] = useState<ProposalActionState[]>([emptyAction])
   const [fetchError, setFetchError] = useState<string | null>(null)
+  const [proposalAlert, setProposalAlert] = useState<{ type: 'success' | 'error'; message: string } | null>(null)
+  const nyaxTokenInterface = useMemo(() => {
+    try {
+      return CONTRACT_ABIS.nyaxToken ? new ethers.Interface(CONTRACT_ABIS.nyaxToken) : null
+    } catch (error) {
+      console.error('Failed to initialise NYAX token interface', error)
+      return null
+    }
+  }, [])
+  const resolveActionPayload = (action: ProposalActionState) => {
+    if (action.presetKey) {
+      const preset = getPresetByKey(action.presetKey)
+      if (!preset) {
+        throw new Error('Unknown preset selected. Please reselect.')
+      }
+      if (!nyaxTokenInterface) {
+        throw new Error('Token ABI unavailable. Check contract config.')
+      }
+
+      const params: Record<string, string> = {}
+      preset.fields?.forEach((field) => {
+        const value = action.presetInputs?.[field.name]
+        if (!value?.trim()) {
+          throw new Error(`${field.label} is required for preset actions.`)
+        }
+        params[field.name] = value
+      })
+
+      return preset.encode(params, nyaxTokenInterface)
+    }
+
+    const target = action.target.trim() || ethers.ZeroAddress
+    let weiValue = '0'
+    if (action.value.trim().length) {
+      try {
+        weiValue = ethers.parseEther(action.value.trim()).toString()
+      } catch {
+        throw new Error('Enter a valid ETH value (use decimals).')
+      }
+    }
+    const calldata = action.calldata.trim().startsWith('0x')
+      ? action.calldata.trim()
+      : `0x${action.calldata.trim()}`
+
+    if (calldata === '0x') {
+      throw new Error('Calldata is required (prepend 0x).')
+    }
+
+    return { target, value: weiValue, calldata }
+  }
 
   useEffect(() => {
     if (!daoService) return
@@ -105,13 +286,7 @@ const ProposalsPage = () => {
     }
     setSubmitting(true)
     try {
-      const normalizedActions = actions.map((action) => {
-        const target = action.target.trim() || '0x0000000000000000000000000000000000000000'
-        const valueInput = action.value.trim()
-        const weiValue = valueInput.length === 0 ? '0' : ethers.parseEther(valueInput || '0').toString()
-        const calldata = action.calldata.trim().startsWith('0x') ? action.calldata.trim() : `0x${action.calldata.trim()}`
-        return { target, value: weiValue, calldata }
-      })
+      const normalizedActions = actions.map((action) => resolveActionPayload(action))
       const targets = normalizedActions.map((item) => item.target)
       const values = normalizedActions.map((item) => item.value)
       const calldatas = normalizedActions.map((item) => item.calldata)
@@ -123,7 +298,8 @@ const ProposalsPage = () => {
       setActions([emptyAction])
       refresh()
     } catch (err: any) {
-      showNotification({ message: err?.message || 'Unable to create proposal (connect wallet?)', variant: 'danger' })
+      const message = err?.message || 'Unable to create proposal (check form + wallet)'
+      showNotification({ message, variant: 'danger' })
     } finally {
       setSubmitting(false)
     }
@@ -144,6 +320,57 @@ const ProposalsPage = () => {
   const addAction = () => setActions((prev) => [...prev, emptyAction])
   const removeAction = (index: number) => {
     setActions((prev) => (prev.length === 1 ? prev : prev.filter((_, idx) => idx !== index)))
+  }
+
+  const handlePresetSelect = (actionIdx: number, presetKey: string) => {
+    const preset = getPresetByKey(presetKey)
+    if (!preset) return
+
+    setActions((prev) =>
+      prev.map((action, idx) =>
+        idx === actionIdx
+          ? {
+              ...action,
+              presetKey,
+              presetInputs: preset.fields?.reduce<Record<string, string>>((acc, field) => {
+                acc[field.name] = action.presetInputs?.[field.name] ?? ''
+                return acc
+              }, {}) ?? {},
+            }
+          : action,
+      ),
+    )
+    setProposalAlert({ type: 'success', message: `Using preset "${preset.label}" for action ${actionIdx + 1}` })
+  }
+
+  const clearPreset = (actionIdx: number) => {
+    setActions((prev) =>
+      prev.map((action, idx) =>
+        idx === actionIdx
+          ? {
+              ...action,
+              presetKey: undefined,
+              presetInputs: undefined,
+            }
+          : action,
+      ),
+    )
+  }
+
+  const updatePresetInput = (actionIdx: number, fieldName: string, value: string) => {
+    setActions((prev) =>
+      prev.map((action, idx) =>
+        idx === actionIdx
+          ? {
+              ...action,
+              presetInputs: {
+                ...(action.presetInputs ?? {}),
+                [fieldName]: value,
+              },
+            }
+          : action,
+      ),
+    )
   }
 
   return (
@@ -319,6 +546,31 @@ const ProposalsPage = () => {
                       </Button>
                     )}
                   </div>
+                  <Form.Group className="mb-3">
+                    <Form.Label className="text-muted">Quick presets</Form.Label>
+                    <Form.Select
+                      defaultValue=""
+                      onChange={(event) => {
+                        const value = event.target.value
+                        if (value) {
+                          handlePresetSelect(index, value)
+                          event.target.value = ''
+                        }
+                      }}
+                    >
+                      <option value="" disabled>
+                        Select NYAX helper…
+                      </option>
+                      {ACTION_PRESETS.map((preset: ActionPreset) => (
+                        <option value={preset.key} key={preset.key}>
+                          {preset.label}
+                        </option>
+                      ))}
+                    </Form.Select>
+                    <Form.Text muted>
+                      Prefill target + calldata for common NYAX governor actions. Contract: {CONTRACT_ADDRESSES.nyaxToken || '—'}
+                    </Form.Text>
+                  </Form.Group>
                   <Form.Group className="mb-3">
                     <Form.Label>Target Address</Form.Label>
                     <Form.Control
