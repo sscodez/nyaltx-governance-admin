@@ -486,7 +486,7 @@ const ProposalsPage = () => {
           const badge = statusVariantMap[proposal.status]
           const votes = getVoteBreakdown(proposal)
           return (
-            <Col xxl={4} lg={6} key={proposal.id}>
+            <Col xs={12} key={proposal.id}>
               <Card className="border-0 shadow-sm h-100">
                 <Card.Body className="d-flex flex-column gap-3">
                   <div className="d-flex justify-content-between align-items-start gap-2">

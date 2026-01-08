@@ -397,7 +397,7 @@ const FolderRegistryPage = () => {
         </Card.Body>
       </Card>
 
-      <Row className="g-3">
+      <Row className="g-4">
         {filteredFolders.length === 0 ? (
           <Col>
             <Card className="border-0 shadow-sm text-center py-5">
@@ -409,44 +409,95 @@ const FolderRegistryPage = () => {
             </Card>
           </Col>
         ) : (
-          filteredFolders.map((folder) => (
-            <Col xxl={4} lg={6} key={folder.id}>
-              <Card className="border-0 shadow-sm h-100">
-                <Card.Body className="d-flex flex-column gap-3">
-                  <div className="d-flex justify-content-between align-items-start">
-                    <div>
-                      <p className="text-muted fs-12 mb-1">Folder #{folder.id}</p>
-                      <h5 className="mb-0">{folder.name}</h5>
-                    </div>
-                    <Badge bg={folder.locked ? 'soft-danger' : 'soft-success'} text={folder.locked ? 'danger' : 'success'}>
-                      {folder.locked ? 'Locked' : 'Live'}
-                    </Badge>
-                  </div>
-                  <div className="d-flex flex-wrap gap-3">
-                    <div>
-                      <p className="text-muted mb-1">Allocated</p>
-                      <span className="fw-semibold">{Number(folder.totalAllocated).toLocaleString()} NYAX</span>
-                    </div>
-                    <div>
-                      <p className="text-muted mb-1">Members</p>
-                      <span className="fw-semibold">{folder.members.length}</span>
-                    </div>
-                    <div>
-                      <p className="text-muted mb-1">Permissions</p>
-                      <Badge bg="soft-info" text="info">
-                        {folder.defaultPermissions}
+          filteredFolders.map((folder) => {
+            const progress = Math.min(100, Math.round(folder.progressPct))
+            const claimableDisplay = formatNumber(folder.claimable)
+            const allocatedDisplay = formatNumber(folder.totalAllocated)
+            return (
+              <Col xxl={6} lg={6} key={folder.id}>
+                <Card className="border-0 shadow-sm h-100">
+                  <Card.Body className="d-flex flex-column gap-3">
+                    <div className="d-flex justify-content-between align-items-start gap-2">
+                      <div className="flex-grow-1">
+                        <p className="text-muted fs-12 mb-1">Folder #{folder.id}</p>
+                        <h4 className="mb-0">{folder.name}</h4>
+                        <div className="d-flex gap-2 flex-wrap mt-2">
+                          <Badge bg="soft-info" text="info">
+                            Wallets: {folder.walletCount}
+                          </Badge>
+                          <Badge bg="soft-secondary" text="secondary">Perm {folder.defaultPermissions}</Badge>
+                          <Badge bg={folder.isApproved ? 'soft-success' : 'soft-warning'} text={folder.isApproved ? 'success' : 'warning'}>
+                            {folder.isApproved ? 'Approved' : 'Pending approval'}
+                          </Badge>
+                        </div>
+                      </div>
+                      <Badge bg={folder.locked ? 'soft-danger' : 'soft-success'} text={folder.locked ? 'danger' : 'success'}>
+                        {folder.locked ? 'Locked' : 'Live'}
                       </Badge>
                     </div>
-                  </div>
-                  <div className="d-flex gap-2 mt-auto">
-                    <Button variant="soft-primary" className="w-100" onClick={() => openFolderDetail(folder)}>
-                      View Insights
-                    </Button>
-                  </div>
-                </Card.Body>
-              </Card>
-            </Col>
-          ))
+
+                    <div className="d-flex flex-wrap gap-4">
+                      <div>
+                        <p className="text-muted mb-1">Allocated</p>
+                        <h5 className="mb-0">{allocatedDisplay} NYAX</h5>
+                      </div>
+                      <div>
+                        <p className="text-muted mb-1">Claimable</p>
+                        <h5 className="mb-0 text-success">{claimableDisplay} NYAX</h5>
+                      </div>
+                    </div>
+
+                    <div>
+                      <div className="d-flex justify-content-between small text-muted">
+                        <span>Vesting progress</span>
+                        <span>{progress}%</span>
+                      </div>
+                      <ProgressBar className="rounded-pill mt-1" style={{ height: 12 }}>
+                        <ProgressBar now={progress} variant="success" />
+                      </ProgressBar>
+                      <div className="d-flex justify-content-between mt-2 small text-muted">
+                        <span>Unvested: {formatNumber(Math.max(0, Number(folder.totalAllocated) - folder.claimable))} NYAX</span>
+                        <span>Wallets: {folder.walletCount}</span>
+                      </div>
+                    </div>
+
+                    <div className="mt-auto d-flex flex-wrap gap-2">
+                      <Button variant="soft-primary" className="flex-grow-1" onClick={() => openFolderDetail(folder)}>
+                        View Insights
+                      </Button>
+                      <Button
+                        variant="outline-success"
+                        className="flex-grow-1"
+                        disabled={!folder.folderAddress || folder.folderAddress === ZERO_ADDRESS}
+                        onClick={() =>
+                          setFundModal({
+                            show: true,
+                            folder,
+                            amount: '',
+                          })
+                        }
+                      >
+                        Fund Folder
+                      </Button>
+                      <Button
+                        variant={folder.isApproved ? 'soft-secondary' : 'soft-warning'}
+                        className="flex-grow-1"
+                        disabled={folder.isApproved}
+                        onClick={() =>
+                          setApproveModal({
+                            show: true,
+                            folder,
+                          })
+                        }
+                      >
+                        {folder.isApproved ? 'Approved' : 'Approve Folder'}
+                      </Button>
+                    </div>
+                  </Card.Body>
+                </Card>
+              </Col>
+            )
+          })
         )}
       </Row>
 
