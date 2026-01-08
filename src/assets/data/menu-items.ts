@@ -17,6 +17,30 @@ export const MENU_ITEMS: MenuItemType[] = [
     url: '/dashboard',
   },
   {
+    key: 'governance-title',
+    label: 'Governance',
+    isTitle: true,
+  },
+  {
+    key: 'governance',
+    icon: 'ri:community-line',
+    label: 'Governance Suite',
+    children: [
+      {
+        key: 'governance-folders',
+        label: 'Folder Registry',
+        url: '/governance/folders',
+        parentKey: 'governance',
+      },
+      {
+        key: 'governance-proposals',
+        label: 'Proposals',
+        url: '/governance/proposals',
+        parentKey: 'governance',
+      },
+    ],
+  },
+  {
     key: 'apps',
     label: 'App',
     isTitle: true,
