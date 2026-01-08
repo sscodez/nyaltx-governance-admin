@@ -1,5 +1,6 @@
 'use client'
 import { useMemo } from 'react'
+import Image from 'next/image'
 import { Dropdown, DropdownHeader, DropdownMenu, DropdownToggle } from 'react-bootstrap'
 import blockies from 'ethereum-blockies'
 import IconifyIcon from '@/components/wrappers/IconifyIcon'
@@ -16,7 +17,7 @@ const ProfileDropdown = () => {
     <Dropdown>
       <DropdownToggle as="a" className="nav-link arrow-none nav-user" role="button" aria-haspopup="false" aria-expanded="false">
         <span className="account-user-avatar">
-          <img src={blockieDataUrl} alt="NYAX Admin avatar" width={32} height={32} className="rounded-circle" />
+          <Image src={blockieDataUrl} alt="NYAX Admin avatar" width={32} height={32} className="rounded-circle" unoptimized />
         </span>
         <span className="d-lg-block d-none">
           <h5 className="my-0 fw-normal">

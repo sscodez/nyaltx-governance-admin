@@ -382,20 +382,53 @@ export class DAOService {
   // Treasury functions
   async getTreasuryStats(): Promise<TreasuryStats> {
     const contract = this.getTreasuryContract();
-    
-    const [balance, categories, multisigThreshold] = await Promise.all([
-      contract.getTreasuryBalance(),
-      contract.getCategories(),
-      contract.MULTISIG_THRESHOLD()
+
+    const normalizeBigNumberish = (value: any): ethers.BigNumberish => {
+      if (value === undefined || value === null) return '0';
+      if (typeof value === 'string' || typeof value === 'number' || typeof value === 'bigint') return value;
+      return '0';
+    };
+
+    const [balanceRaw, categoriesRaw, multisigThresholdRaw, foldersRaw, pausedRaw] = await Promise.all([
+      contract.getTreasuryBalance?.().catch(() => null) ?? contract.treasuryBalance?.().catch(() => null) ?? null,
+      contract.getCategories?.().catch(() => []) ?? [],
+      contract.MULTISIG_THRESHOLD?.().catch(() => null) ?? null,
+      contract.getFolders?.().catch(() => []) ?? [],
+      contract.paused?.().catch(() => false) ?? false
     ]);
 
-    const totalAllocation = await contract.getTotalAllocation();
+    const folders: string[] = Array.isArray(foldersRaw) ? foldersRaw : [];
+    const categories: any[] = Array.isArray(categoriesRaw) ? categoriesRaw : [];
+
+    let approvedCount = 0;
+    if (folders.length && typeof contract.approvedFolders === 'function') {
+      const approvals = await Promise.all(
+        folders.map(async (folder: string) => {
+          try {
+            return await contract.approvedFolders(folder);
+          } catch {
+            return false;
+          }
+        })
+      );
+      approvedCount = approvals.filter(Boolean).length;
+    }
+
+    const totalAllocationRaw = await contract.getTotalAllocation?.().catch(() => null);
+
+    const balance = ethers.formatEther(normalizeBigNumberish(balanceRaw));
+    const totalAllocation = totalAllocationRaw !== null ? Number(totalAllocationRaw) : 0;
+    const multisigThreshold = ethers.formatEther(normalizeBigNumberish(multisigThresholdRaw));
 
     return {
-      totalBalance: ethers.formatEther(balance),
-      totalAllocated: Number(totalAllocation),
+      treasuryBalance: balance,
+      totalFolders: folders.length,
+      approvedFolders: approvedCount,
+      isPaused: Boolean(pausedRaw),
+      totalBalance: balance,
+      totalAllocated: totalAllocation,
       categoriesCount: categories.length,
-      multisigThreshold: ethers.formatEther(multisigThreshold)
+      multisigThreshold
     };
   }
 
