@@ -1,6 +1,6 @@
   'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Alert, Badge, Button, Card, Col, Form, Modal, ProgressBar, Row, Spinner } from 'react-bootstrap'
 import { ethers } from 'ethers'
 
@@ -657,12 +657,11 @@ const ProposalsPage = () => {
                   <Form.Group className="mb-3">
                     <Form.Label className="text-muted">Quick presets</Form.Label>
                     <Form.Select
-                      defaultValue=""
+                      value={action.presetKey ?? ''}
                       onChange={(event) => {
                         const value = event.target.value
                         if (value) {
                           handlePresetSelect(index, value)
-                          event.target.value = ''
                         }
                       }}
                     >
@@ -679,34 +678,34 @@ const ProposalsPage = () => {
                       Prefill target + calldata for common NYAX governor actions. Contract: {CONTRACT_ADDRESSES.nyaxToken || '—'}
                     </Form.Text>
                   </Form.Group>
-                  <Form.Group className="mb-3">
-                    <Form.Label>Target Address</Form.Label>
-                    <Form.Control
-                      value={action.target}
-                      onChange={(e) => updateAction(index, { target: e.target.value })}
-                      placeholder="0x..."
-                    />
-                  </Form.Group>
-                  <Row className="mb-3">
-                    <Col md={6}>
-                      <Form.Label>ETH Value</Form.Label>
-                      <Form.Control
-                        type="number"
-                        min={0}
-                        step="0.001"
-                        value={action.value}
-                        onChange={(e) => updateAction(index, { value: e.target.value })}
-                      />
-                    </Col>
-                    <Col md={6}>
-                      <Form.Label>Calldata</Form.Label>
-                      <Form.Control
-                        value={action.calldata}
-                        onChange={(e) => updateAction(index, { calldata: e.target.value })}
-                        placeholder="0x"
-                      />
-                    </Col>
-                  </Row>
+                  {action.presetKey ? (
+                    <>
+                      <div className="d-flex justify-content-between align-items-center mb-3">
+                        <Badge bg="soft-primary" text="primary">
+                          {getPresetByKey(action.presetKey)?.label}
+                        </Badge>
+                        <Button variant="link" size="sm" className="text-decoration-none" onClick={() => clearPreset(index)}>
+                          Clear preset
+                        </Button>
+                      </div>
+                      {getPresetByKey(action.presetKey)?.fields?.map((field) => (
+                        <Form.Group className="mb-3" key={field.name}>
+                          <Form.Label>{field.label}</Form.Label>
+                          <Form.Control
+                            type={field.type === 'number' ? 'number' : 'text'}
+                            value={action.presetInputs?.[field.name] ?? ''}
+                            onChange={(e) => updatePresetInput(index, field.name, e.target.value)}
+                            placeholder={field.placeholder}
+                          />
+                          {field.helper && <Form.Text muted>{field.helper}</Form.Text>}
+                        </Form.Group>
+                      ))}
+                    </>
+                  ) : (
+                    <Alert variant="info" className="mb-0">
+                      Select a preset above to configure this action.
+                    </Alert>
+                  )}
                 </Card.Body>
               </Card>
             ))}
