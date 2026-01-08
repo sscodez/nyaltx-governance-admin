@@ -17,7 +17,7 @@ const Login = () => {
           <Col xxl={9} lg={11}>
             <Card className="overflow-hidden">
               <Row className="g-0">
-                <Col lg={6}>
+                <Col lg={11}>
                   <div className="d-flex flex-column h-100">
                     <AuthLogo />
                     <div className="p-4 my-auto text-center">
