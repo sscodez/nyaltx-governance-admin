@@ -9,14 +9,7 @@ const LoginForm = () => {
 
   return (
     <div className="text-start">
-      <Card className="bg-body-tertiary border-0 mb-3">
-        <Card.Body>
-          <h5 className="fw-semibold mb-2">Connect Wallet</h5>
-          <p className="text-muted mb-0">
-            Use your MetaMask wallet to authenticate. Once connected, you&apos;ll be redirected back to your dashboard.
-          </p>
-        </Card.Body>
-      </Card>
+  
 
       {!ready && (
         <Alert variant="info" className="mb-3">
@@ -56,9 +49,7 @@ const LoginForm = () => {
           </>
         )}
       </Button>
-      <p className="text-muted fs-14 mt-3 mb-0">
-        Need help? Open the MetaMask extension and ensure you&apos;re on the account you&apos;d like to use for governance.
-      </p>
+ 
     </div>
   )
 }

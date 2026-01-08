@@ -12,10 +12,8 @@ const LoginView = () => {
         <Row className="justify-content-center">
           <Col xl={4} lg={5} md={7} sm={9}>
             <div className="text-center mb-4">
-              <AuthLogo className="mb-3" />
-              <Badge bg="soft-primary" text="primary" className="mb-2">
-                Secure Access
-              </Badge>
+       
+           
               <h3 className="fw-semibold">Sign in to NYAX Admin</h3>
               <p className="text-muted mb-0">Verify ownership of your governance wallet to continue.</p>
             </div>
@@ -24,9 +22,7 @@ const LoginView = () => {
                 <LoginForm />
               </Card.Body>
             </Card>
-            <p className="text-center text-muted mt-3 mb-0 fs-14">
-              Wallet not ready? Ensure MetaMask is unlocked &amp; set to Sepolia.
-            </p>
+      
           </Col>
         </Row>
       </Container>
