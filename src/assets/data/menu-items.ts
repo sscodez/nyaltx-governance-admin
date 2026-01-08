@@ -58,25 +58,25 @@ export const MENU_ITEMS: MenuItemType[] = [
     url: '/apps/kanban',
   },
 
-  {
-    key: 'apps-invoices',
-    icon: 'ri:article-line',
-    label: 'Invoice',
-    children: [
-      {
-        key: 'invoices-report',
-        label: 'Invoice Report',
-        url: '/apps/invoices/report',
-        parentKey: 'apps-invoices',
-      },
-      {
-        key: 'invoice',
-        label: 'Invoice',
-        url: '/apps/invoices/349122',
-        parentKey: 'apps-invoices',
-      },
-    ],
-  },
+  // {
+  //   key: 'apps-invoices',
+  //   icon: 'ri:article-line',
+  //   label: 'Invoice',
+  //   children: [
+  //     {
+  //       key: 'invoices-report',
+  //       label: 'Invoice Report',
+  //       url: '/apps/invoices/report',
+  //       parentKey: 'apps-invoices',
+  //     },
+  //     {
+  //       key: 'invoice',
+  //       label: 'Invoice',
+  //       url: '/apps/invoices/349122',
+  //       parentKey: 'apps-invoices',
+  //     },
+  //   ],
+  // },
   // {
   //   key: 'extra-pages',
   //   label: 'Extra Pages',
