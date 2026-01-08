@@ -10,7 +10,7 @@ import IconifyIcon from '@/components/wrappers/IconifyIcon'
 import PageTitle from '@/components/PageTitle'
 import { useNotificationContext } from '@/context/useNotificationContext'
 import useDaoService from '@/hooks/useDaoService'
-import type { FolderInfo, GovernanceStats, ProposalData } from '@/services/contracts'
+import type { FolderInfo, GovernanceStats, ProposalData, TreasuryStats } from '@/services/contracts'
 import { NETWORK_CONFIG } from '@/services/contracts'
 
 const formatNumber = (value: string | number, digits = 1) => {
@@ -49,19 +49,22 @@ const Dashboard = () => {
   const [folders, setFolders] = useState<FolderInfo[]>([])
   const [blockTimestamps, setBlockTimestamps] = useState<Record<number, number>>({})
   const [fetching, setFetching] = useState(false)
+  const [treasuryStats, setTreasuryStats] = useState<TreasuryStats | null>(null)
 
   const loadDashboard = useCallback(async () => {
     if (!daoService) return
     setFetching(true)
     try {
-      const [statsResponse, proposalsResponse, foldersResponse] = await Promise.all([
+      const [statsResponse, proposalsResponse, foldersResponse, treasuryResponse] = await Promise.all([
         daoService.governance.getGovernanceStats(),
         daoService.governance.getAllProposals(5),
         daoService.folders.getAllFolders(),
+        daoService.treasury.getTreasuryStats(),
       ])
       setGovStats(statsResponse)
       setRecentProposals(proposalsResponse)
       setFolders(foldersResponse)
+      setTreasuryStats(treasuryResponse)
     } catch (error: any) {
       showNotification({ message: error?.message || 'Unable to load dashboard insights', variant: 'danger' })
     } finally {
@@ -220,6 +223,56 @@ const Dashboard = () => {
     [proposalChartData],
   )
 
+  const treasuryAllocationData = useMemo(() => {
+    if (!folders.length) {
+      return { categories: [] as string[], allocations: [] as number[] }
+    }
+    const topFolders = [...folders]
+      .sort((a, b) => Number(b.totalAllocated || 0) - Number(a.totalAllocated || 0))
+      .slice(0, 6)
+    const categories = topFolders.map((folder) => folder.name || `Folder ${folder.id}`)
+    const allocations = topFolders.map((folder) => Number(folder.totalAllocated || 0))
+    return { categories, allocations }
+  }, [folders])
+
+  const treasuryBalanceValue = useMemo(() => Number(treasuryStats?.treasuryBalance ?? 0), [treasuryStats])
+
+  const treasuryChartOptions: ApexOptions = useMemo(
+    () => ({
+      chart: {
+        type: 'area',
+        toolbar: { show: false },
+        stacked: false,
+      },
+      stroke: { width: [2, 2], curve: 'smooth' },
+      fill: { opacity: [0.3, 0] },
+      dataLabels: { enabled: false },
+      xaxis: {
+        categories: treasuryAllocationData.categories,
+        axisBorder: { color: '#eee' },
+      },
+      yaxis: {
+        labels: { formatter: (value) => formatNumber(value) },
+        title: { text: 'NYAX' },
+      },
+      colors: ['#0ea5e9', '#ef4444'],
+      tooltip: {
+        shared: true,
+        intersect: false,
+        y: { formatter: (value) => `${formatNumber(value)} NYAX` },
+      },
+    }),
+    [treasuryAllocationData.categories],
+  )
+
+  const treasuryChartSeries = useMemo(() => {
+    const balanceLine = treasuryAllocationData.categories.map(() => treasuryBalanceValue)
+    return [
+      { name: 'Allocated', data: treasuryAllocationData.allocations },
+      { name: 'Treasury Balance', data: balanceLine },
+    ]
+  }, [treasuryAllocationData, treasuryBalanceValue])
+
   const insightMetrics = useMemo(() => {
     const totalVotes = recentProposals.reduce(
       (acc, proposal) => acc + Number(proposal.forVotes || 0) + Number(proposal.againstVotes || 0) + Number(proposal.abstainVotes || 0),
@@ -239,6 +292,17 @@ const Dashboard = () => {
       topFolderShare,
     }
   }, [folderInsights, recentProposals])
+
+  const treasuryInsights = useMemo(() => {
+    const totalAllocated = folders.reduce((acc, folder) => acc + Number(folder.totalAllocated || 0), 0)
+    return {
+      balance: treasuryBalanceValue,
+      approved: treasuryStats?.approvedFolders ?? 0,
+      paused: treasuryStats?.isPaused ?? false,
+      averageAllocation: folders.length ? totalAllocated / folders.length : 0,
+      coverage: treasuryBalanceValue > 0 ? (totalAllocated / treasuryBalanceValue) * 100 : 0,
+    }
+  }, [folders, treasuryBalanceValue, treasuryStats])
 
   return (
     <>

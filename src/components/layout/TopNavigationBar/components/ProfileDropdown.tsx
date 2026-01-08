@@ -1,22 +1,26 @@
 'use client'
-import Image from 'next/image'
+import { useMemo } from 'react'
 import { Dropdown, DropdownHeader, DropdownMenu, DropdownToggle } from 'react-bootstrap'
-
-import avatar1 from '@/assets/images/users/avatar-1.jpg'
+import blockies from 'ethereum-blockies'
 import IconifyIcon from '@/components/wrappers/IconifyIcon'
 import Link from 'next/link'
 import { signOut } from 'next-auth/react'
 
 const ProfileDropdown = () => {
+  const blockieDataUrl = useMemo(() => {
+    const blockie = blockies.create({ seed: 'nyax-admin', size: 8, scale: 4 })
+    return blockie.toDataURL()
+  }, [])
+
   return (
     <Dropdown>
       <DropdownToggle as="a" className="nav-link arrow-none nav-user" role="button" aria-haspopup="false" aria-expanded="false">
         <span className="account-user-avatar">
-          <Image src={avatar1} alt="user-image" width={32} className="rounded-circle" />
+          <img src={blockieDataUrl} alt="NYAX Admin avatar" width={32} height={32} className="rounded-circle" />
         </span>
         <span className="d-lg-block d-none">
           <h5 className="my-0 fw-normal">
-            Adams
+            NYAX Admin
             <IconifyIcon icon="ri:arrow-down-s-line" className="fs-22 d-none d-sm-inline-block align-middle" />
           </h5>
         </span>

@@ -7,6 +7,7 @@ import IconifyIcon from '@/components/wrappers/IconifyIcon'
 import PageTitle from '@/components/PageTitle'
 import { useNotificationContext } from '@/context/useNotificationContext'
 import useDaoService from '@/hooks/useDaoService'
+import { useWalletContext } from '@/context/useWalletContext'
 import type { FolderInfo, FolderMemberInfo } from '@/services/contracts'
 
 const DAY_IN_SECONDS = 86400
@@ -61,6 +62,7 @@ const truncateAddress = (address?: string) => {
 
 const FolderRegistryPage = () => {
   const { daoService, loading, error } = useDaoService()
+  const { walletProvider } = useWalletContext()
   const { showNotification } = useNotificationContext()
 
   const [folders, setFolders] = useState<FolderInfo[]>([])
@@ -293,12 +295,21 @@ const FolderRegistryPage = () => {
     }
   }
 
+  const getSigner = useCallback(async () => {
+    if (!walletProvider) {
+      throw new Error('Please connect your wallet to continue.')
+    }
+    const provider = new ethers.BrowserProvider(walletProvider)
+    return provider.getSigner()
+  }, [walletProvider])
+
   const handleFundFolder = async () => {
     if (!daoService || !fundModal.folder || !fundModal.amount.trim()) return
     setFunding(true)
     try {
+      const signer = await getSigner()
       const amountWei = ethers.parseEther(fundModal.amount)
-      await daoService.treasury.sendToFolder(fundModal.folder.folderAddress, amountWei, daoService['signer'] as ethers.Signer)
+      await daoService.treasury.sendToFolder(fundModal.folder.folderAddress, amountWei, signer)
       showNotification({ message: 'Funds sent to folder', variant: 'success' })
       setFundModal({ show: false, folder: null, amount: '' })
       refreshFolders()
@@ -313,7 +324,8 @@ const FolderRegistryPage = () => {
     if (!daoService || !approveModal.folder) return
     setApproving(true)
     try {
-      await daoService.treasury.approveFolder(approveModal.folder.folderAddress, daoService['signer'] as ethers.Signer)
+      const signer = await getSigner()
+      await daoService.treasury.approveFolder(approveModal.folder.folderAddress, signer)
       showNotification({ message: 'Folder approved successfully', variant: 'success' })
       setApproveModal({ show: false, folder: null })
       refreshFolders()

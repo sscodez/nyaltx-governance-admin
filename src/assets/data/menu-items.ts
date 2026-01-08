@@ -558,38 +558,38 @@ export const MENU_ITEMS: MenuItemType[] = [
   //     },
   //   ],
   // },
-  {
-    key: 'menuitem',
-    icon: 'ri:share-line',
-    label: 'Multi Level',
-    children: [
-      {
-        key: 'menu-item-1',
-        label: 'Level 1.1',
-        parentKey: 'menuitem',
-      },
-      {
-        key: 'menu-item-2',
-        label: 'Level 1.2',
-        parentKey: 'menuitem',
-        children: [
-          {
-            key: 'menu-sub-item',
-            label: 'Item 1',
-            parentKey: 'menu-item-2',
-          },
-          {
-            key: 'menu-sub-item-2',
-            label: 'Item 2',
-            parentKey: 'menu-item-3',
-          },
-        ],
-      },
-      {
-        key: 'menu-item-1-2',
-        label: 'Level 1.3',
-        parentKey: 'menuitem',
-      },
-    ],
-  },
+  // {
+  //   key: 'menuitem',
+  //   icon: 'ri:share-line',
+  //   label: 'Multi Level',
+  //   children: [
+  //     {
+  //       key: 'menu-item-1',
+  //       label: 'Level 1.1',
+  //       parentKey: 'menuitem',
+  //     },
+  //     {
+  //       key: 'menu-item-2',
+  //       label: 'Level 1.2',
+  //       parentKey: 'menuitem',
+  //       children: [
+  //         {
+  //           key: 'menu-sub-item',
+  //           label: 'Item 1',
+  //           parentKey: 'menu-item-2',
+  //         },
+  //         {
+  //           key: 'menu-sub-item-2',
+  //           label: 'Item 2',
+  //           parentKey: 'menu-item-3',
+  //         },
+  //       ],
+  //     },
+  //     {
+  //       key: 'menu-item-1-2',
+  //       label: 'Level 1.3',
+  //       parentKey: 'menuitem',
+  //     },
+  //   ],
+  // },
 ]
