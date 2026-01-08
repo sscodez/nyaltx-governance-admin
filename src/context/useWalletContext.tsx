@@ -39,8 +39,13 @@ export const WalletProvider = ({ children }: ChildrenType) => {
             },
           })
         }
-        providerRef.current = sdkRef.current.getProvider()
-        setHasProvider(!!providerRef.current)
+        const sdkProvider = sdkRef.current.getProvider()
+        if (sdkProvider) {
+          providerRef.current = sdkProvider
+        } else if (typeof window !== 'undefined' && (window as any).ethereum) {
+          providerRef.current = (window as any).ethereum
+        }
+        setHasProvider(Boolean(providerRef.current))
         setWalletProvider(providerRef.current)
       } catch (error) {
         setHasProvider(false)
