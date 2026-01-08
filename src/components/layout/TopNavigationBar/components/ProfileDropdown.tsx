@@ -6,12 +6,22 @@ import blockies from 'ethereum-blockies'
 import IconifyIcon from '@/components/wrappers/IconifyIcon'
 import Link from 'next/link'
 import { signOut } from 'next-auth/react'
+import { useRouter } from 'next/navigation'
+import { useWalletContext } from '@/context/useWalletContext'
 
 const ProfileDropdown = () => {
+  const router = useRouter()
+  const { disconnectWallet } = useWalletContext()
   const blockieDataUrl = useMemo(() => {
     const blockie = blockies.create({ seed: 'nyax-admin', size: 8, scale: 4 })
     return blockie.toDataURL()
   }, [])
+
+  const handleLogout = async () => {
+    disconnectWallet()
+    await signOut({ redirect: false })
+    router.push('/auth/login')
+  }
 
   return (
     <Dropdown>
@@ -38,7 +48,7 @@ const ProfileDropdown = () => {
           <IconifyIcon icon="ri:customer-service-2-line" className="fs-16 align-middle me-1" />
           <span>Support</span>
         </Link>
-        <Link href="/auth/logout" onClick={() => signOut({ redirect: false })} className="dropdown-item">
+        <Link href="/auth/logout" onClick={(event) => { event.preventDefault(); handleLogout() }} className="dropdown-item">
           <IconifyIcon icon="ri:logout-circle-r-line" className="align-middle me-1" />
           <span>Logout</span>
         </Link>
