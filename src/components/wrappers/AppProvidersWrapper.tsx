@@ -1,5 +1,6 @@
 'use client'
 
+import { SessionProvider } from 'next-auth/react'
 import { useEffect } from 'react'
 import dynamic from 'next/dynamic'
 
@@ -34,13 +35,15 @@ const AppProvidersWrapper = ({ children }: ChildrenType) => {
   }, [])
 
   return (
-    <WalletProvider>
-      <LayoutProvider>
-        <TitleProvider>
-          <NotificationProvider>{children}</NotificationProvider>
-        </TitleProvider>
-      </LayoutProvider>
-    </WalletProvider>
+    <SessionProvider>
+      <WalletProvider>
+        <LayoutProvider>
+          <TitleProvider>
+            <NotificationProvider>{children}</NotificationProvider>
+          </TitleProvider>
+        </LayoutProvider>
+      </WalletProvider>
+    </SessionProvider>
   )
 }
 
