@@ -245,7 +245,7 @@ const Typography = () => {
             description={
               <p className="text-muted mb-0">
                 For quoting blocks of content from another source within your document. Wrap
-                <code>&lt;blockquote class=&quot;blockquote&quot;&gt;</code> around any <abbr title="TechminText Markup Language">HTML</abbr> as the
+                <code>&lt;blockquote class=&quot;blockquote&quot;&gt;</code> around any <abbr title="NyaxText Markup Language">HTML</abbr> as the
                 quote.
               </p>
             }>

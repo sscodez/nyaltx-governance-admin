@@ -310,31 +310,31 @@ export const activityData: ActivityType[] = [
 
 export const projectData: ProjectType[] = [
   {
-    name: 'Techmin Admin',
+    name: 'Nyax Admin',
     startDate: addOrSubtractDaysFromDate(1, true),
     dueDate: addOrSubtractDaysFromDate(3, true),
     status: 'Work in Progress',
   },
   {
-    name: 'Techmin Frontend',
+    name: 'Nyax Frontend',
     startDate: addOrSubtractDaysFromDate(5, true),
     dueDate: addOrSubtractDaysFromDate(9, true),
     status: 'Pending',
   },
   {
-    name: 'Techmin Admin',
+    name: 'Nyax Admin',
     startDate: addOrSubtractDaysFromDate(12, true),
     dueDate: addOrSubtractDaysFromDate(17, true),
     status: 'Done',
   },
   {
-    name: 'Techmin Frontend',
+    name: 'Nyax Frontend',
     startDate: addOrSubtractDaysFromDate(21, true),
     dueDate: addOrSubtractDaysFromDate(28, true),
     status: 'Work in Progress',
   },
   {
-    name: 'Techmin Admin',
+    name: 'Nyax Admin',
     startDate: addOrSubtractDaysFromDate(36, true),
     dueDate: addOrSubtractDaysFromDate(43, true),
     status: 'Coming soon',

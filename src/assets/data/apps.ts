@@ -192,7 +192,7 @@ export const invoicesData: InvoiceType[] = [
   {
     id: '215402',
     userId: '103',
-    product: 'Techmin UL Kit',
+    product: 'Nyax UL Kit',
     date: addOrSubtractDaysFromDate(68),
     amount: 22.0,
     vendor: '3D Artist',

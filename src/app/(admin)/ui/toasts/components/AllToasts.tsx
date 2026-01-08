@@ -66,7 +66,7 @@ const DefaultToasts = () => {
               <Toast onClose={hide} show={isOpen} autohide>
                 <ToastHeader>
                   <Image src={smLogo} alt="brand-logo" height="16" className="me-1" />
-                  <strong className="me-auto">TECHMIN</strong>
+                  <strong className="me-auto">Nyax</strong>
                   <small>11 mins ago</small>
                 </ToastHeader>
                 <ToastBody>Hello, world! This is a toast message.</ToastBody>
@@ -85,7 +85,7 @@ const DefaultToasts = () => {
               <Toast onClose={hideTranslucent} show={isOpenTranslucent} delay={8000} autohide className="fade">
                 <ToastHeader>
                   <Image src={smLogo} alt="brand-logo" height="16" className="me-1" />
-                  <strong className="me-auto">TECHMIN</strong>
+                  <strong className="me-auto">Nyax</strong>
                   <small>11 mins ago</small>
                 </ToastHeader>
                 <ToastBody>Hello, world! This is a toast message.</ToastBody>
@@ -106,7 +106,7 @@ const DefaultToasts = () => {
                       <Toast className="fade" key={idx} onClose={() => handleClose(idx)} delay={5000} autohide>
                         <ToastHeader>
                           <Image src={smLogo} alt="brand-logo" height="16" className="me-1" />
-                          <strong className="me-auto">TECHMIN</strong>
+                          <strong className="me-auto">Nyax</strong>
                           <small className="text-muted">{item.time}</small>
                         </ToastHeader>
                         <ToastBody>{item.desc}</ToastBody>
@@ -129,7 +129,7 @@ const DefaultToasts = () => {
                 <Toast className="fade" onClose={hidePlacement} show={isOpenPlacement} delay={6000} autohide>
                   <ToastHeader>
                     <Image src={smLogo} alt="brand-logo" height="16" className="me-1" />
-                    <strong className="me-auto">TECHMIN</strong>
+                    <strong className="me-auto">Nyax</strong>
                     <small>11 mins ago</small>
                   </ToastHeader>
                   <ToastBody>Hello, world! This is a toast message.</ToastBody>
@@ -246,7 +246,7 @@ const PlacementToast = () => {
             <Toast>
               <ToastHeader closeButton={false}>
                 <Image src={smLogo} alt="brand-logo" height="16" className="me-1" />
-                <strong className="me-auto">TECHMIN</strong>
+                <strong className="me-auto">Nyax</strong>
                 <small>11 mins ago</small>
               </ToastHeader>
               <ToastBody>Hello, world! This is a toast message.</ToastBody>
