@@ -14,10 +14,10 @@ const Login = () => {
     <div className="account-pages p-sm-5 position-relative">
       <Container>
         <Row className="justify-content-center">
-          <Col xxl={9} lg={11}>
+          <Col xxl={9} lg={6}>
             <Card className="overflow-hidden">
               <Row className="g-0">
-                <Col lg={11}>
+                <Col lg={6}>
                   <div className="d-flex flex-column h-100">
                     <AuthLogo />
                     <div className="p-4 my-auto text-center">
