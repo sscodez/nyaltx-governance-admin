@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import { Alert, Badge, Button, Card, Col, Form, Modal, Row, Spinner, Table } from 'react-bootstrap'
+import { ethers } from 'ethers'
 
 import PageTitle from '@/components/PageTitle'
 import { useNotificationContext } from '@/context/useNotificationContext'
@@ -11,9 +12,6 @@ import type { GovernanceStats, ProposalData } from '@/services/contracts'
 const defaultProposalForm = {
   title: '',
   description: '',
-  target: '',
-  value: '0',
-  calldata: '0x',
 }
 
 const statusVariantMap: Record<ProposalData['status'], { bg: string; text: string }> = {
@@ -23,6 +21,18 @@ const statusVariantMap: Record<ProposalData['status'], { bg: string; text: strin
   queued: { bg: 'soft-warning', text: 'warning' },
   executed: { bg: 'soft-info', text: 'info' },
   canceled: { bg: 'soft-secondary', text: 'secondary' },
+}
+
+type ProposalAction = {
+  target: string
+  value: string
+  calldata: string
+}
+
+const emptyAction: ProposalAction = {
+  target: '',
+  value: '0',
+  calldata: '0x',
 }
 
 const ProposalsPage = () => {
@@ -36,9 +46,10 @@ const ProposalsPage = () => {
   const [createModal, setCreateModal] = useState(false)
   const [createForm, setCreateForm] = useState(defaultProposalForm)
   const [submitting, setSubmitting] = useState(false)
-
   const [detailModal, setDetailModal] = useState(false)
   const [selectedProposal, setSelectedProposal] = useState<ProposalData | null>(null)
+  const [actions, setActions] = useState<ProposalAction[]>([emptyAction])
+  const [fetchError, setFetchError] = useState<string | null>(null)
 
   useEffect(() => {
     if (!daoService) return
@@ -51,8 +62,11 @@ const ProposalsPage = () => {
         ])
         setStats(statsResponse)
         setProposals(proposalsResponse)
+        setFetchError(null)
       } catch (err: any) {
-        showNotification({ message: err?.message || 'Unable to fetch proposals', variant: 'danger' })
+        const message = err?.message || 'Unable to fetch proposals'
+        setFetchError(message)
+        showNotification({ message, variant: 'danger' })
       } finally {
         setFetching(false)
       }
@@ -70,6 +84,7 @@ const ProposalsPage = () => {
       ])
       setStats(statsResponse)
       setProposals(proposalsResponse)
+      setFetchError(null)
     } catch (err: any) {
       showNotification({ message: err?.message || 'Unable to refresh proposals', variant: 'danger' })
     } finally {
@@ -84,17 +99,28 @@ const ProposalsPage = () => {
 
   const handleCreateProposal = async () => {
     if (!daoService) return
+    if (!actions.length) {
+      showNotification({ message: 'Add at least one proposal action', variant: 'warning' })
+      return
+    }
     setSubmitting(true)
     try {
-      const targets = [createForm.target.trim() || '0x0000000000000000000000000000000000000000']
-      const numericValue = createForm.value.trim()
-      const values = [numericValue.length > 0 ? numericValue : '0']
-      const calldatas = [createForm.calldata.trim() || '0x']
+      const normalizedActions = actions.map((action) => {
+        const target = action.target.trim() || '0x0000000000000000000000000000000000000000'
+        const valueInput = action.value.trim()
+        const weiValue = valueInput.length === 0 ? '0' : ethers.parseEther(valueInput || '0').toString()
+        const calldata = action.calldata.trim().startsWith('0x') ? action.calldata.trim() : `0x${action.calldata.trim()}`
+        return { target, value: weiValue, calldata }
+      })
+      const targets = normalizedActions.map((item) => item.target)
+      const values = normalizedActions.map((item) => item.value)
+      const calldatas = normalizedActions.map((item) => item.calldata)
       const description = `${createForm.title}\n${createForm.description}`
       await daoService.governance.createProposal(targets, values, calldatas, description)
       showNotification({ message: 'Proposal submitted. It will appear once mined.', variant: 'success' })
       setCreateModal(false)
       setCreateForm(defaultProposalForm)
+      setActions([emptyAction])
       refresh()
     } catch (err: any) {
       showNotification({ message: err?.message || 'Unable to create proposal (connect wallet?)', variant: 'danger' })
@@ -110,6 +136,15 @@ const ProposalsPage = () => {
     })
     return counts
   }, [proposals])
+
+  const updateAction = (index: number, patch: Partial<ProposalAction>) => {
+    setActions((prev) => prev.map((action, idx) => (idx === index ? { ...action, ...patch } : action)))
+  }
+
+  const addAction = () => setActions((prev) => [...prev, emptyAction])
+  const removeAction = (index: number) => {
+    setActions((prev) => (prev.length === 1 ? prev : prev.filter((_, idx) => idx !== index)))
+  }
 
   return (
     <>
@@ -267,35 +302,54 @@ const ProposalsPage = () => {
                 onChange={(e) => setCreateForm((prev) => ({ ...prev, description: e.target.value }))}
               />
             </Form.Group>
-            <Form.Group className="mb-3">
-              <Form.Label>Target Address</Form.Label>
-              <Form.Control
-                value={createForm.target}
-                onChange={(e) => setCreateForm((prev) => ({ ...prev, target: e.target.value }))}
-                placeholder="0x..."
-              />
-              <Form.Text className="text-muted">Defaults to zero address if blank.</Form.Text>
-            </Form.Group>
-            <Row className="mb-3">
-              <Col md={6}>
-                <Form.Label>ETH Value</Form.Label>
-                <Form.Control
-                  type="number"
-                  min={0}
-                  step="0.001"
-                  value={createForm.value}
-                  onChange={(e) => setCreateForm((prev) => ({ ...prev, value: e.target.value }))}
-                />
-              </Col>
-              <Col md={6}>
-                <Form.Label>Calldata</Form.Label>
-                <Form.Control
-                  value={createForm.calldata}
-                  onChange={(e) => setCreateForm((prev) => ({ ...prev, calldata: e.target.value }))}
-                  placeholder="0x"
-                />
-              </Col>
-            </Row>
+            <div className="d-flex justify-content-between align-items-center mb-2">
+              <h6 className="mb-0 text-uppercase fs-12 text-muted">Actions</h6>
+              <Button size="sm" variant="soft-primary" onClick={addAction}>
+                Add action
+              </Button>
+            </div>
+            {actions.map((action, index) => (
+              <Card className="mb-3" key={`action-${index}`}>
+                <Card.Body>
+                  <div className="d-flex justify-content-between align-items-center mb-2">
+                    <h6 className="mb-0">Action #{index + 1}</h6>
+                    {actions.length > 1 && (
+                      <Button size="sm" variant="soft-danger" onClick={() => removeAction(index)}>
+                        Remove
+                      </Button>
+                    )}
+                  </div>
+                  <Form.Group className="mb-3">
+                    <Form.Label>Target Address</Form.Label>
+                    <Form.Control
+                      value={action.target}
+                      onChange={(e) => updateAction(index, { target: e.target.value })}
+                      placeholder="0x..."
+                    />
+                  </Form.Group>
+                  <Row className="mb-3">
+                    <Col md={6}>
+                      <Form.Label>ETH Value</Form.Label>
+                      <Form.Control
+                        type="number"
+                        min={0}
+                        step="0.001"
+                        value={action.value}
+                        onChange={(e) => updateAction(index, { value: e.target.value })}
+                      />
+                    </Col>
+                    <Col md={6}>
+                      <Form.Label>Calldata</Form.Label>
+                      <Form.Control
+                        value={action.calldata}
+                        onChange={(e) => updateAction(index, { calldata: e.target.value })}
+                        placeholder="0x"
+                      />
+                    </Col>
+                  </Row>
+                </Card.Body>
+              </Card>
+            ))}
           </Form>
         </Modal.Body>
         <Modal.Footer>
