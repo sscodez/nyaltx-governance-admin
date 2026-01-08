@@ -31,20 +31,12 @@ const ProfileDropdown = () => {
           <h6 className="text-overflow m-0">Welcome !</h6>
         </DropdownHeader>
         <Link href="/pages/profile" className="dropdown-item">
-          <IconifyIcon icon="ri:account-pin-circle-line" className="fs-16 align-middle me-1 " />
-          <span>My Account</span>
-        </Link>
-        <Link href="/pages/profile" className="dropdown-item">
           <IconifyIcon icon="ri:settings-4-line" className="fs-16 align-middle me-1" />
           <span>Settings</span>
         </Link>
         <Link href="/pages/faq" className="dropdown-item">
           <IconifyIcon icon="ri:customer-service-2-line" className="fs-16 align-middle me-1" />
           <span>Support</span>
-        </Link>
-        <Link href="/auth/lock-screen" className="dropdown-item">
-          <IconifyIcon icon="ri:lock-line" className="fs-16 align-middle me-1" />
-          <span>Lock Screen</span>
         </Link>
         <Link href="/auth/logout" onClick={() => signOut({ redirect: false })} className="dropdown-item">
           <IconifyIcon icon="ri:logout-circle-r-line" className="align-middle me-1" />

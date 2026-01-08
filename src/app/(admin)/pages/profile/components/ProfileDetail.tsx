@@ -89,7 +89,21 @@ const Activities = () => {
   )
 }
 
+import { useRouter } from 'next/navigation'
+import { useWalletContext } from '@/context/useWalletContext'
+import { useNotificationContext } from '@/context/useNotificationContext'
+
 const Settings = () => {
+  const { disconnectWallet } = useWalletContext()
+  const router = useRouter()
+  const { showNotification } = useNotificationContext()
+
+  const handleDisconnect = async () => {
+    disconnectWallet()
+    showNotification({ message: 'Wallet disconnected', variant: 'info' })
+    router.push('/auth/login')
+  }
+
   const settingSchema = yup.object({
     name: yup.string().required('Please enter your name'),
     email: yup.string().email('Please enter valid email').required('Please enter your email'),
@@ -134,6 +148,10 @@ const Settings = () => {
         </Row>
         <Button variant="primary" type="submit">
           <IconifyIcon icon="mdi:content-save-outline" className="me-1 fs-16 lh-1" /> Save
+        </Button>
+        <Button variant="soft-danger" type="button" className="ms-2" onClick={handleDisconnect}>
+          <IconifyIcon icon="ri:logout-circle-r-line" className="me-1 fs-16 lh-1" />
+          Disconnect Wallet
         </Button>
       </form>
     </div>
