@@ -32,6 +32,7 @@ const MapWithMarkers = ({ google }: MapContainerProps) => {
   const [activeMarker, setActiveMarker] = useState<any>({})
   const [selectedPlace, setSelectedPlace] = useState<any>({})
   const [showingInfoWindow, setShowingInfoWindow] = useState<boolean>(false)
+  const mapInstanceRef = useRef<any>(null)
 
   const onInfoWindowClose = () => {
     setActiveMarker(null)
@@ -49,6 +50,12 @@ const MapWithMarkers = ({ google }: MapContainerProps) => {
     setSelectedPlace(props)
     setShowingInfoWindow(true)
   }
+
+  const handleMapReady = (_mapProps?: unknown, map?: any) => {
+    if (map) {
+      mapInstanceRef.current = map
+    }
+  }
   return (
     <ComponentContainerCard title="Markers Google Map">
       <div id="gmaps-markers" className="gmaps  position-relative">
@@ -59,7 +66,8 @@ const MapWithMarkers = ({ google }: MapContainerProps) => {
           style={{ width: '100%', height: '100%', position: 'relative' }}
           zoomControlOptions={{
             position: google.maps.ControlPosition.LEFT_TOP,
-          }}>
+          }}
+          onReady={handleMapReady}>
           <Marker
             title={'This is sweet home.'}
             name={'Home sweet home!'}
@@ -71,11 +79,18 @@ const MapWithMarkers = ({ google }: MapContainerProps) => {
             title={'Marker with InfoWindow'}
             position={{ lat: 21.56969, lng: 71.5893798 }}
             onClick={onMarkerClick}></Marker>
-          <InfoWindow marker={activeMarker} onClose={onInfoWindowClose} visible={showingInfoWindow}>
-            <div>
-              <p>{selectedPlace.name}</p>
-            </div>
-          </InfoWindow>
+          {showingInfoWindow && mapInstanceRef.current && (
+            <InfoWindow
+              map={mapInstanceRef.current}
+              google={google}
+              marker={activeMarker}
+              onClose={onInfoWindowClose}
+              visible={showingInfoWindow}>
+              <div>
+                <p>{selectedPlace.name}</p>
+              </div>
+            </InfoWindow>
+          )}
         </Map>
       </div>
     </ComponentContainerCard>
@@ -83,25 +98,27 @@ const MapWithMarkers = ({ google }: MapContainerProps) => {
 }
 
 const StreetViewMap = ({ google }: MapContainerProps) => {
-  let mapRef: any = useRef()
+  const streetViewMapRef = useRef<any>(null)
 
   /**
    * Activate the street view
    */
   const activateStreetView = (position: { lat: number; lng: number }) => {
-    if (mapRef) {
-      const mapObj = mapRef.map.getStreetView()
-      mapObj.setPov({ heading: 34, pitch: 10 })
-      mapObj.setPosition(position)
-      mapObj.setVisible(true)
-    }
+    const mapObj = streetViewMapRef.current?.map
+    if (!mapObj) return
+    const streetView = mapObj.getStreetView()
+    streetView.setPov({ heading: 34, pitch: 10 })
+    streetView.setPosition(position)
+    streetView.setVisible(true)
   }
   return (
     <ComponentContainerCard title="Street View Panoramas Google Map">
       <div id="panorama" className="gmaps position-relative">
         <Map
           google={google}
-          ref={(map: unknown) => (mapRef = map)}
+          ref={(instance) => {
+            streetViewMapRef.current = instance
+          }}
           zoom={14}
           initialCenter={{ lat: 40.7295174, lng: -73.9986496 }}
           style={{ width: '100%', height: '100%', position: 'relative' }}
