@@ -1,3 +1,5 @@
+'use client'
+
 import type { Metadata } from 'next'
 import { Card, Col, Container, Row } from 'react-bootstrap'
 
