@@ -15,9 +15,7 @@ const OtherLayout = ({ children }: ChildrenType) => {
     <>
      <Suspense>{children}</Suspense> 
 
-      <footer className="footer footer-alt fw-medium">
-        <span className="text-dark-emphasis">{currentYear} © NYAX Admin · Powered by Techzaa</span>
-      </footer>
+  
     </>
   )
 }
