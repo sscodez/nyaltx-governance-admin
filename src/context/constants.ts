@@ -6,9 +6,9 @@ export const currentYear = new Date().getFullYear()
 
 export const developedByLink = 'https://techzaa.getappui.com/'
 
-export const developedBy = 'Techzaa'
+export const developedBy = 'NYALTX'
 
-export const contactUs = 'techzaastudio@gmail.com'
+export const contactUs = 'admin@nyaltx.pro'
 
 export const buyLink = ''
 
