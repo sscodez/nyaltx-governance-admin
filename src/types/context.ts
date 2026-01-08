@@ -76,4 +76,6 @@ export type KanbanType = {
   sectionForm: FormControlSubmitType
   getAllTasksPerSection: (sectionId: KanbanSectionType['id']) => KanbanTaskType[]
   onDragEnd: (result: DropResult) => void
+  loading: boolean
+  error: string | null
 }
