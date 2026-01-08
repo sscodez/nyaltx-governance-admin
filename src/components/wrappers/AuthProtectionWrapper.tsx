@@ -1,18 +1,29 @@
 'use client'
-import { useSession } from 'next-auth/react'
-import { usePathname, useRouter } from 'next/navigation'
-import { Suspense, useState } from 'react'
 
-import type { ChildrenType } from '@/types/component-props'
+import { useEffect } from 'react'
+import { usePathname, useRouter } from 'next/navigation'
+import { Suspense } from 'react'
+
 import FallbackLoading from '../FallbackLoading'
+import type { ChildrenType } from '@/types/component-props'
+import { useWalletContext } from '@/context/useWalletContext'
 
 const AuthProtectionWrapper = ({ children }: ChildrenType) => {
-  const { status } = useSession()
+  const { address, ready } = useWalletContext()
   const { push } = useRouter()
   const pathname = usePathname()
 
-  if (status == 'unauthenticated') {
-    push(`/auth/login?redirectTo=${pathname}`)
+  useEffect(() => {
+    if (ready && !address) {
+      push(`/auth/login?redirectTo=${pathname}`)
+    }
+  }, [ready, address, pathname, push])
+
+  if (!ready) {
+    return <FallbackLoading />
+  }
+
+  if (!address) {
     return <FallbackLoading />
   }
 
