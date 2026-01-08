@@ -1,7 +1,8 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
-import { Badge, Button, Card, Col, Form, Modal, Offcanvas, Row, Spinner, Table } from 'react-bootstrap'
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import { Badge, Button, Card, Col, Form, Modal, Offcanvas, ProgressBar, Row, Spinner, Table } from 'react-bootstrap'
+import { ethers } from 'ethers'
 import IconifyIcon from '@/components/wrappers/IconifyIcon'
 import PageTitle from '@/components/PageTitle'
 import { useNotificationContext } from '@/context/useNotificationContext'
@@ -36,11 +37,36 @@ const formatNumber = (value: string | number) => {
   return numeric.toLocaleString()
 }
 
+const ZERO_ADDRESS = ethers.ZeroAddress
+
+type TreasuryOverview = {
+  treasuryBalance: string
+  totalFolders: number
+  approvedFolders: number
+  isPaused: boolean
+}
+
+type FolderCard = FolderInfo & {
+  folderAddress: string
+  walletCount: number
+  claimable: number
+  progressPct: number
+  isApproved: boolean
+}
+
+const truncateAddress = (address?: string) => {
+  if (!address || address === ZERO_ADDRESS) return '—'
+  return `${address.slice(0, 6)}...${address.slice(-4)}`
+}
+
 const FolderRegistryPage = () => {
   const { daoService, loading, error } = useDaoService()
   const { showNotification } = useNotificationContext()
 
   const [folders, setFolders] = useState<FolderInfo[]>([])
+  const [folderCards, setFolderCards] = useState<FolderCard[]>([])
+  const [folderAddressMap, setFolderAddressMap] = useState<Record<string, string>>({})
+  const [treasuryStats, setTreasuryStats] = useState<TreasuryOverview | null>(null)
   const [fetching, setFetching] = useState(false)
 
   const [search, setSearch] = useState('')
@@ -56,40 +82,145 @@ const FolderRegistryPage = () => {
 
   const [showDetailDrawer, setShowDetailDrawer] = useState(false)
 
-  useEffect(() => {
-    if (!daoService) return
-    const load = async () => {
-      setFetching(true)
-      try {
-        const list = await daoService.folders.getAllFolders()
-        setFolders(list)
-      } catch (err: any) {
-        showNotification({ message: err?.message || 'Failed to load folders', variant: 'danger' })
-      } finally {
-        setFetching(false)
-      }
-    }
-    load()
-  }, [daoService, showNotification])
+  const [fundModal, setFundModal] = useState<{ show: boolean; folder: FolderCard | null; amount: string }>({
+    show: false,
+    folder: null,
+    amount: '',
+  })
+  const [approveModal, setApproveModal] = useState<{ show: boolean; folder: FolderCard | null }>({
+    show: false,
+    folder: null,
+  })
+  const [funding, setFunding] = useState(false)
+  const [approving, setApproving] = useState(false)
 
-  const refreshFolders = async () => {
+  const fetchFolderAddresses = useCallback(
+    async (foldersList: FolderInfo[]) => {
+      if (!daoService?.folderFactory) return {}
+      try {
+        const addresses = await daoService.folderFactory.getAllFolders()
+        const entries = await Promise.all(
+          addresses.map(async (address: string) => {
+            try {
+              const info = await daoService.folderFactory.getFolderInfo(address)
+              if (!info?.name) return null
+              return [info.name, address] as const
+            } catch {
+              return null
+            }
+          }),
+        )
+        const map = entries.filter(Boolean).reduce<Record<string, string>>((acc, entry) => {
+          if (entry) acc[entry[0]] = entry[1]
+          return acc
+        }, {})
+        // fallback: ensure currently known folders have at least zero address entry
+        foldersList.forEach((folder) => {
+          if (!map[folder.name]) map[folder.name] = ZERO_ADDRESS
+        })
+        setFolderAddressMap(map)
+        return map
+      } catch {
+        return foldersList.reduce<Record<string, string>>((acc, folder) => {
+          acc[folder.name] = ZERO_ADDRESS
+          return acc
+        }, {})
+      }
+    },
+    [daoService?.folderFactory],
+  )
+
+  const hydrateFolderCards = useCallback(
+    async (baseFolders: FolderInfo[], addressMap: Record<string, string>) => {
+      if (!daoService) return
+      try {
+        const approvedList = await daoService.treasury
+          .getApprovedFolders()
+          .catch(() => []) as { address: string }[]
+        const approvedSet = new Set(approvedList.map((item) => item.address?.toLowerCase?.()).filter(Boolean))
+
+        const cards = await Promise.all(
+          baseFolders.map(async (folder) => {
+            let walletCount = folder.members.length
+            let claimable = 0
+            try {
+              const detail = await daoService.folders.getFolderMembers(folder.id)
+              walletCount = detail.length
+              claimable = detail.reduce((sum, member) => sum + Number(member.unlockedAmount || 0), 0)
+            } catch {
+              // ignore per-folder failures
+            }
+
+            const totalAllocated = Number(folder.totalAllocated) || 0
+            const progressPct = totalAllocated > 0 ? Math.min(100, (claimable / totalAllocated) * 100) : 0
+            const folderAddress = addressMap[folder.name] ?? ZERO_ADDRESS
+            const isApproved =
+              folderAddress !== ZERO_ADDRESS && approvedSet.has(folderAddress.toLowerCase())
+
+            return {
+              ...folder,
+              folderAddress,
+              walletCount,
+              claimable,
+              progressPct,
+              isApproved,
+            }
+          }),
+        )
+
+        setFolderCards(cards)
+      } catch (err: any) {
+        console.error('Failed to hydrate folder cards', err)
+      }
+    },
+    [daoService],
+  )
+
+  const loadData = useCallback(async () => {
     if (!daoService) return
     setFetching(true)
     try {
-      const list = await daoService.folders.getAllFolders()
+      const [list, treasury] = await Promise.all([
+        daoService.folders.getAllFolders(),
+        daoService.treasury
+          .getTreasuryStats()
+          .then((stats) => ({
+            treasuryBalance: stats.treasuryBalance,
+            totalFolders: stats.totalFolders,
+            approvedFolders: stats.approvedFolders,
+            isPaused: stats.isPaused,
+          }))
+          .catch(() => null),
+      ])
+
       setFolders(list)
+      setTreasuryStats(treasury)
+
+      const addressMap = await fetchFolderAddresses(list)
+      await hydrateFolderCards(list, addressMap)
     } catch (err: any) {
-      showNotification({ message: err?.message || 'Failed to refresh folders', variant: 'danger' })
+      showNotification({ message: err?.message || 'Failed to load folder registry', variant: 'danger' })
     } finally {
       setFetching(false)
     }
+  }, [daoService, fetchFolderAddresses, hydrateFolderCards, showNotification])
+
+  useEffect(() => {
+    if (!daoService) return
+    loadData()
+  }, [daoService, loadData])
+
+  const refreshFolders = async () => {
+    await loadData()
   }
 
   const filteredFolders = useMemo(() => {
-    if (!search.trim()) return folders
+    if (!search.trim()) return folderCards
     const query = search.trim().toLowerCase()
-    return folders.filter((folder) => folder.name.toLowerCase().includes(query) || folder.id.toString().includes(query))
-  }, [folders, search])
+    return folderCards.filter(
+      (folder) => folder.name.toLowerCase().includes(query) || folder.id.toString().includes(query),
+    )
+  }, [folderCards, search])
 
   const summary = useMemo(() => {
     const totalMembers = folders.reduce((acc, folder) => acc + folder.members.length, 0)

@@ -1,9 +1,10 @@
   'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import { Alert, Badge, Button, Card, Col, Form, Modal, Row, Spinner, Table } from 'react-bootstrap'
+import { Alert, Badge, Button, Card, Col, Form, Modal, ProgressBar, Row, Spinner } from 'react-bootstrap'
 import { ethers } from 'ethers'
 
+import IconifyIcon from '@/components/wrappers/IconifyIcon'
 import PageTitle from '@/components/PageTitle'
 import { useNotificationContext } from '@/context/useNotificationContext'
 import useDaoService from '@/hooks/useDaoService'
@@ -15,14 +16,15 @@ const defaultProposalForm = {
   description: '',
 }
 
-const statusVariantMap: Record<ProposalData['status'], { bg: string; text: string }> = {
-  active: { bg: 'soft-primary', text: 'primary' },
-  succeeded: { bg: 'soft-success', text: 'success' },
-  defeated: { bg: 'soft-danger', text: 'danger' },
-  queued: { bg: 'soft-warning', text: 'warning' },
-  executed: { bg: 'soft-info', text: 'info' },
-  canceled: { bg: 'soft-secondary', text: 'secondary' },
+const statusVariantMap: Record<ProposalData['status'], { bg: string; text: string; icon: string; label: string }> = {
+  active: { bg: 'soft-primary', text: 'primary', icon: 'solar:flash-bold-duotone', label: 'Active' },
+  succeeded: { bg: 'soft-success', text: 'success', icon: 'solar:check-ring-round-bold-duotone', label: 'Succeeded' },
+  defeated: { bg: 'soft-danger', text: 'danger', icon: 'solar:close-circle-line-duotone', label: 'Defeated' },
+  queued: { bg: 'soft-warning', text: 'warning', icon: 'solar:calendar-line-duotone', label: 'Queued' },
+  executed: { bg: 'soft-info', text: 'info', icon: 'solar:rocket-bold-duotone', label: 'Executed' },
+  canceled: { bg: 'soft-secondary', text: 'secondary', icon: 'solar:shield-cross-bold-duotone', label: 'Canceled' },
 }
+const STATUS_ORDER: ProposalData['status'][] = ['active', 'succeeded', 'queued', 'executed', 'defeated', 'canceled']
 
 type ProposalAction = {
   target: string
@@ -165,6 +167,39 @@ const emptyAction: ProposalActionState = {
 }
 
 const getPresetByKey = (key?: string) => (key ? ACTION_PRESETS.find((preset) => preset.key === key) : undefined)
+
+const shortenId = (id: string) => {
+  if (!id) return '—'
+  const trimmed = id.replace(/^0+/, '')
+  if (trimmed.length <= 10) return trimmed
+  return `${trimmed.slice(0, 6)}…${trimmed.slice(-4)}`
+}
+
+const truncateAddress = (address?: string) => {
+  if (!address) return '—'
+  return `${address.slice(0, 6)}…${address.slice(-4)}`
+}
+
+const formatVotes = (value: string) => {
+  if (!value) return '0'
+  return Number(value).toLocaleString()
+}
+
+const getVoteBreakdown = (proposal: ProposalData) => {
+  const forVotes = Number(proposal.forVotes || 0)
+  const againstVotes = Number(proposal.againstVotes || 0)
+  const abstainVotes = Number(proposal.abstainVotes || 0)
+  const total = forVotes + againstVotes + abstainVotes || 1
+
+  return {
+    forVotes,
+    againstVotes,
+    abstainVotes,
+    forPct: (forVotes / total) * 100,
+    againstPct: (againstVotes / total) * 100,
+    abstainPct: (abstainVotes / total) * 100,
+  }
+}
 
 const ProposalsPage = () => {
   const { daoService, loading: serviceLoading, error: serviceError } = useDaoService()
@@ -435,76 +470,81 @@ const ProposalsPage = () => {
         </Col>
       </Row>
 
-      <Row>
-        <Col>
-          <Card>
-            <Card.Header className="d-flex justify-content-between align-items-center">
-              <div>
-                <h5 className="mb-0">All Proposals</h5>
-                <small className="text-muted">Statuses: {Object.entries(statusCounts).map(([status, count]) => `${status} (${count})`).join(', ') || '—'}</small>
-              </div>
-              {(fetching || serviceLoading) && <Spinner animation="border" size="sm" />}
-            </Card.Header>
-            <div className="table-responsive">
-              <Table hover className="mb-0">
-                <thead>
-                  <tr>
-                    <th>ID</th>
-                    <th>Title</th>
-                    <th>Status</th>
-                    <th>Votes</th>
-                    <th>Proposer</th>
-                    <th>Start</th>
-                    <th>End</th>
-                    <th></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {proposals.length === 0 && (
-                    <tr>
-                      <td colSpan={8} className="text-center text-muted py-4">
-                        {fetching ? 'Loading proposals…' : 'No proposals yet'}
-                      </td>
-                    </tr>
-                  )}
-                  {proposals.map((proposal) => {
-                    const badge = statusVariantMap[proposal.status]
-                    return (
-                      <tr key={proposal.id}>
-                        <td>#{proposal.id}</td>
-                        <td className="fw-semibold text-truncate" style={{ maxWidth: 200 }}>
-                          {proposal.title}
-                        </td>
-                        <td>
-                          <Badge bg={badge.bg} text={badge.text} className="text-uppercase">
-                            {proposal.status}
-                          </Badge>
-                        </td>
-                        <td>
-                          <div className="d-flex flex-column">
-                            <span className="text-success">For: {proposal.forVotes}</span>
-                            <span className="text-danger">Against: {proposal.againstVotes}</span>
-                            <span className="text-muted">Abstain: {proposal.abstainVotes}</span>
-                          </div>
-                        </td>
-                        <td className="text-muted text-truncate" style={{ maxWidth: 160 }}>
-                          {proposal.proposer}
-                        </td>
-                        <td>{proposal.startBlock}</td>
-                        <td>{proposal.endBlock}</td>
-                        <td className="text-end">
-                          <Button size="sm" variant="soft-primary" onClick={() => openDetail(proposal)}>
-                            View
-                          </Button>
-                        </td>
-                      </tr>
-                    )
-                  })}
-                </tbody>
-              </Table>
-            </div>
-          </Card>
-        </Col>
+      <Row className="g-3">
+        {proposals.length === 0 && (
+          <Col>
+            <Card className="text-center border-0 shadow-sm py-5">
+              <Card.Body>
+                <IconifyIcon icon="solar:document-bold-duotone" className="display-5 text-muted mb-3" />
+                <h5 className="mb-1">{fetching ? 'Loading proposals…' : 'No proposals yet'}</h5>
+                <p className="text-muted mb-0">Kick off governance by submitting the first proposal.</p>
+              </Card.Body>
+            </Card>
+          </Col>
+        )}
+        {proposals.map((proposal) => {
+          const badge = statusVariantMap[proposal.status]
+          const votes = getVoteBreakdown(proposal)
+          return (
+            <Col xxl={4} lg={6} key={proposal.id}>
+              <Card className="border-0 shadow-sm h-100">
+                <Card.Body className="d-flex flex-column gap-3">
+                  <div className="d-flex justify-content-between align-items-start gap-2">
+                    <div className="flex-grow-1">
+                      <p className="text-muted fs-12 mb-1">Proposal #{shortenId(proposal.id)}</p>
+                      <h5 className="mb-1 text-truncate">{proposal.title || 'Untitled proposal'}</h5>
+                      <p className="text-muted mb-0 small text-truncate">
+                        {proposal.description || 'No description provided.'}
+                      </p>
+                    </div>
+                    <Badge bg={badge.bg} text={badge.text} className="text-uppercase">
+                      {proposal.status}
+                    </Badge>
+                  </div>
+                  <div>
+                    <div className="d-flex justify-content-between small text-muted">
+                      <span>Voting distribution</span>
+                      <span>Total: {formatVotes((votes.forVotes + votes.againstVotes + votes.abstainVotes).toString())}</span>
+                    </div>
+                    <ProgressBar className="mt-1 rounded-pill" style={{ height: 10 }}>
+                      <ProgressBar now={votes.forPct} variant="success" key="for" />
+                      <ProgressBar now={votes.againstPct} variant="danger" key="against" />
+                      <ProgressBar now={votes.abstainPct} variant="secondary" key="abstain" />
+                    </ProgressBar>
+                    <div className="d-flex justify-content-between mt-2 small">
+                      <span className="text-success">For: {formatVotes(proposal.forVotes)} </span>
+                      <span className="text-danger">Against: {formatVotes(proposal.againstVotes)}</span>
+                      <span className="text-muted">Abstain: {formatVotes(proposal.abstainVotes)}</span>
+                    </div>
+                  </div>
+                  <div className="d-flex flex-wrap gap-3 text-muted small">
+                    <div>
+                      <div className="text-uppercase fs-11">Proposer</div>
+                      <span className="text-dark fw-semibold">{truncateAddress(proposal.proposer)}</span>
+                    </div>
+                    <div>
+                      <div className="text-uppercase fs-11">Start / End</div>
+                      <span className="text-dark fw-semibold">
+                        {proposal.startBlock} → {proposal.endBlock}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="mt-auto d-flex justify-content-between align-items-center">
+                    <div className="text-muted small">
+                      Updated status counts:{' '}
+                      {Object.entries(statusCounts)
+                        .map(([status, count]) => `${status} (${count})`)
+                        .join(', ') || '—'}
+                    </div>
+                    <Button size="sm" variant="soft-primary" onClick={() => openDetail(proposal)}>
+                      View
+                    </Button>
+                  </div>
+                </Card.Body>
+              </Card>
+            </Col>
+          )
+        })}
       </Row>
 
       <Modal show={createModal} onHide={() => setCreateModal(false)} centered>
