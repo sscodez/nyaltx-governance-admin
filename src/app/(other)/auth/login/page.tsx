@@ -29,9 +29,7 @@ const Login = () => {
                     </div>
                   </div>
                 </Col>
-                <Col lg={6} className="d-none d-lg-block">
-                  <Image src={authImg} alt="MetaMask authentication illustration" className="img-fluid rounded h-100" priority />
-                </Col>
+               
               </Row>
             </Card>
           </Col>
