@@ -1,9 +1,10 @@
+const ReactApexChart = dynamic(() => import('react-apexcharts'), { ssr: false })
 'use client'
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import dynamic from 'next/dynamic'
 import { Alert, Badge, Button, Card, Col, ProgressBar, Row, Spinner } from 'react-bootstrap'
 import { ethers } from 'ethers'
-import ReactApexChart from 'react-apexcharts'
 import type { ApexOptions } from 'apexcharts'
 
 import IconifyIcon from '@/components/wrappers/IconifyIcon'
