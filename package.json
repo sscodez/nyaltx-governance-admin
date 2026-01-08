@@ -50,7 +50,8 @@
     "sass": "^1.77.8",
     "simplebar-core": "^1.2.6",
     "simplebar-react": "^3.2.6",
-    "yup": "^1.4.0"
+    "yup": "^1.4.0",
+      "ethers": "^6.15.0",
   },
   "devDependencies": {
     "@types/node": "^22.5.1",

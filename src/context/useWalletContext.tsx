@@ -10,6 +10,7 @@ type WalletContextType = {
   connecting: boolean
   hasProvider: boolean
   ready: boolean
+  walletProvider: any | null
   connectWallet: () => Promise<string>
   disconnectWallet: () => void
 }
@@ -23,6 +24,7 @@ export const WalletProvider = ({ children }: ChildrenType) => {
   const [ready, setReady] = useState(false)
   const sdkRef = useRef<MetaMaskSDK | null>(null)
   const providerRef = useRef<any>(null)
+  const [walletProvider, setWalletProvider] = useState<any | null>(null)
 
   useEffect(() => {
     if (typeof window === 'undefined') return
@@ -39,6 +41,7 @@ export const WalletProvider = ({ children }: ChildrenType) => {
         }
         providerRef.current = sdkRef.current.getProvider()
         setHasProvider(!!providerRef.current)
+        setWalletProvider(providerRef.current)
       } catch (error) {
         setHasProvider(false)
       } finally {
@@ -110,11 +113,12 @@ export const WalletProvider = ({ children }: ChildrenType) => {
     if (typeof window !== 'undefined') {
       window.localStorage.removeItem('walletAddress')
     }
+    setWalletProvider(providerRef.current)
   }
 
   const value = useMemo(
-    () => ({ address, connecting, hasProvider, ready, connectWallet, disconnectWallet }),
-    [address, connecting, hasProvider, ready]
+    () => ({ address, connecting, hasProvider, ready, walletProvider, connectWallet, disconnectWallet }),
+    [address, connecting, hasProvider, ready, walletProvider]
   )
 
   return <WalletContext.Provider value={value}>{children}</WalletContext.Provider>
