@@ -8,7 +8,7 @@ import IconifyIcon from '@/components/wrappers/IconifyIcon'
 import PageTitle from '@/components/PageTitle'
 import { useNotificationContext } from '@/context/useNotificationContext'
 import useDaoService from '@/hooks/useDaoService'
-import { CONTRACT_ABIS, CONTRACT_ADDRESSES } from '@/services/contracts'
+import { CONTRACT_ABIS, CONTRACT_ADDRESSES, NETWORK_CONFIG } from '@/services/contracts'
 import type { GovernanceStats, ProposalData } from '@/services/contracts'
 
 const defaultProposalForm = {
@@ -208,6 +208,7 @@ const ProposalsPage = () => {
   const [stats, setStats] = useState<GovernanceStats | null>(null)
   const [proposals, setProposals] = useState<ProposalData[]>([])
   const [fetching, setFetching] = useState(false)
+  const [blockTimestamps, setBlockTimestamps] = useState<Record<number, number>>({})
 
   const [createModal, setCreateModal] = useState(false)
   const [createForm, setCreateForm] = useState(defaultProposalForm)
@@ -340,6 +341,73 @@ const ProposalsPage = () => {
       setSubmitting(false)
     }
   }
+
+  const blockProvider = useMemo(() => {
+    try {
+      return new ethers.JsonRpcProvider(NETWORK_CONFIG.rpcUrl)
+    } catch (error) {
+      console.error('Failed to create block provider', error)
+      return null
+    }
+  }, [])
+
+  const fetchBlockTimestamps = useCallback(
+    async (blockNumbers: number[]) => {
+      if (!blockProvider || !blockNumbers.length) return
+      const uniqueBlocks = Array.from(new Set(blockNumbers)).filter(
+        (block) => typeof block === 'number' && block >= 0 && blockTimestamps[block] === undefined,
+      )
+      if (!uniqueBlocks.length) return
+
+      try {
+        const entries = await Promise.all(
+          uniqueBlocks.map(async (blockNumber) => {
+            try {
+              const block = await blockProvider.getBlock(blockNumber)
+              return [blockNumber, Number(block?.timestamp ?? 0)] as const
+            } catch (error) {
+              console.warn('Failed to fetch block timestamp', blockNumber, error)
+              return [blockNumber, 0] as const
+            }
+          }),
+        )
+        setBlockTimestamps((prev) => {
+          const next = { ...prev }
+          entries.forEach(([blockNumber, timestamp]) => {
+            if (timestamp) {
+              next[blockNumber] = timestamp
+            }
+          })
+          return next
+        })
+      } catch (error) {
+        console.error('Error resolving block timestamps', error)
+      }
+    },
+    [blockProvider, blockTimestamps],
+  )
+
+  useEffect(() => {
+    if (!proposals.length) return
+    const blockNumbers: number[] = []
+    proposals.forEach((proposal) => {
+      blockNumbers.push(proposal.startBlock, proposal.endBlock)
+    })
+    fetchBlockTimestamps(blockNumbers)
+  }, [fetchBlockTimestamps, proposals])
+
+  const formatBlockTimestamp = useCallback(
+    (blockNumber: number) => {
+      const timestamp = blockTimestamps[blockNumber]
+      if (!timestamp) return `Block ${blockNumber}`
+      try {
+        return new Date(timestamp * 1000).toLocaleString()
+      } catch {
+        return `Block ${blockNumber}`
+      }
+    },
+    [blockTimestamps],
+  )
 
   const statusCounts = useMemo(() => {
     const counts: Record<string, number> = {}
@@ -523,10 +591,9 @@ const ProposalsPage = () => {
                       <span className="text-dark fw-semibold">{truncateAddress(proposal.proposer)}</span>
                     </div>
                     <div>
-                      <div className="text-uppercase fs-11">Start / End</div>
-                      <span className="text-dark fw-semibold">
-                        {proposal.startBlock} → {proposal.endBlock}
-                      </span>
+                      <div className="text-uppercase fs-11">Voting Window</div>
+                      <span className="text-dark fw-semibold d-block">{formatBlockTimestamp(proposal.startBlock)}</span>
+                      <span className="text-muted">{formatBlockTimestamp(proposal.endBlock)}</span>
                     </div>
                   </div>
                   <div className="mt-auto d-flex justify-content-between align-items-center">

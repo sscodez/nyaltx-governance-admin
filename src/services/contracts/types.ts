@@ -107,6 +107,8 @@ export interface ProposalData {
   abstainVotes: string;
   startBlock: number;
   endBlock: number;
+  startTimestamp?: number;
+  endTimestamp?: number;
   eta: number;
   isEmergency: boolean;
   isFastTrack: boolean;
