@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Alert, Badge, Button, Card, Col, ProgressBar, Row, Spinner } from 'react-bootstrap'
 import { ethers } from 'ethers'
+import ReactApexChart from 'react-apexcharts'
+import type { ApexOptions } from 'apexcharts'
 
 import IconifyIcon from '@/components/wrappers/IconifyIcon'
 import PageTitle from '@/components/PageTitle'
@@ -162,6 +164,76 @@ const Dashboard = () => {
     return counts
   }, [recentProposals])
 
+  const proposalChartData = useMemo(() => {
+    if (!recentProposals.length) {
+      return { categories: [] as string[], forVotes: [] as number[], againstVotes: [] as number[], abstainVotes: [] as number[] }
+    }
+    const categories = recentProposals.map((proposal) => `#${shortenId(proposal.id)}`)
+    const forVotes = recentProposals.map((proposal) => Number(proposal.forVotes || 0))
+    const againstVotes = recentProposals.map((proposal) => Number(proposal.againstVotes || 0))
+    const abstainVotes = recentProposals.map((proposal) => Number(proposal.abstainVotes || 0))
+    return { categories, forVotes, againstVotes, abstainVotes }
+  }, [recentProposals])
+
+  const proposalChartOptions: ApexOptions = useMemo(
+    () => ({
+      chart: {
+        type: 'bar',
+        stacked: true,
+        toolbar: { show: false },
+      },
+      stroke: { width: 1, colors: ['#fff'] },
+      xaxis: {
+        categories: proposalChartData.categories,
+        axisBorder: { color: '#eee' },
+      },
+      yaxis: {
+        labels: { formatter: (value) => formatNumber(value) },
+        title: { text: 'Votes (NYAX)' },
+      },
+      legend: {
+        position: 'top',
+        fontSize: '13px',
+      },
+      tooltip: {
+        shared: true,
+        intersect: false,
+        y: { formatter: (value) => `${formatNumber(value)} votes` },
+      },
+      colors: ['#16a34a', '#dc2626', '#6b7280'],
+    }),
+    [proposalChartData.categories],
+  )
+
+  const proposalChartSeries = useMemo(
+    () => [
+      { name: 'For', data: proposalChartData.forVotes },
+      { name: 'Against', data: proposalChartData.againstVotes },
+      { name: 'Abstain', data: proposalChartData.abstainVotes },
+    ],
+    [proposalChartData],
+  )
+
+  const insightMetrics = useMemo(() => {
+    const totalVotes = recentProposals.reduce(
+      (acc, proposal) => acc + Number(proposal.forVotes || 0) + Number(proposal.againstVotes || 0) + Number(proposal.abstainVotes || 0),
+      0,
+    )
+    const avgVotes = recentProposals.length ? totalVotes / recentProposals.length : 0
+    const avgWalletAllocation =
+      folderInsights.walletCount > 0 ? Number(folderInsights.totalAllocated || 0) / folderInsights.walletCount : 0
+    const topFolder = folderInsights.topFolders[0]
+    const topFolderShare = topFolder && folderInsights.totalAllocated ? (Number(topFolder.totalAllocated) / folderInsights.totalAllocated) * 100 : 0
+
+    return {
+      totalVotes,
+      avgVotes,
+      avgWalletAllocation,
+      topFolder,
+      topFolderShare,
+    }
+  }, [folderInsights, recentProposals])
+
   return (
     <>
       <PageTitle title="Protocol Overview" />
@@ -223,6 +295,75 @@ const Dashboard = () => {
       </Row>
 
       <Row className="g-4">
+        <Col xl={8}>
+          <Card className="border-0 shadow-sm h-100">
+            <Card.Header className="d-flex justify-content-between align-items-center">
+              <div>
+                <h5 className="mb-0">Proposal Vote Distribution</h5>
+                <small className="text-muted">Stacked votes for the latest governance actions</small>
+              </div>
+              <Button size="sm" variant="soft-secondary" onClick={loadDashboard} disabled={fetching}>
+                Refresh chart
+              </Button>
+            </Card.Header>
+            <Card.Body>
+              {recentProposals.length === 0 ? (
+                <p className="text-muted mb-0">No proposal data available for chart.</p>
+              ) : (
+                <ReactApexChart options={proposalChartOptions} series={proposalChartSeries} type="bar" height={320} />
+              )}
+            </Card.Body>
+          </Card>
+        </Col>
+        <Col xl={4}>
+          <Card className="border-0 shadow-sm h-100">
+            <Card.Header className="d-flex justify-content-between align-items-center">
+              <div>
+                <h5 className="mb-0">Key Insights</h5>
+                <small className="text-muted">Pulse on governance + allocation</small>
+              </div>
+              <IconifyIcon icon="solar:chart-2-bold-duotone" className="text-primary fs-4" />
+            </Card.Header>
+            <Card.Body>
+              <Row className="g-3">
+                <Col xs={12}>
+                  <Card className="border-0 bg-primary-subtle text-primary h-100">
+                    <Card.Body>
+                      <p className="text-uppercase fs-12 mb-1">Total Votes (Recent)</p>
+                      <h4 className="mb-0">{formatNumber(insightMetrics.totalVotes)} NYAX</h4>
+                      <small className="text-primary-emphasis">Avg {formatNumber(insightMetrics.avgVotes, 2)} votes per proposal</small>
+                    </Card.Body>
+                  </Card>
+                </Col>
+                <Col xs={12}>
+                  <Card className="border-0 bg-success-subtle text-success h-100">
+                    <Card.Body>
+                      <p className="text-uppercase fs-12 mb-1">Avg Wallet Allocation</p>
+                      <h4 className="mb-0">{formatNumber(insightMetrics.avgWalletAllocation, 2)} NYAX</h4>
+                      <small className="text-success-emphasis">{folderInsights.walletCount} active wallets</small>
+                    </Card.Body>
+                  </Card>
+                </Col>
+                <Col xs={12}>
+                  <Card className="border-0 bg-warning-subtle text-warning h-100">
+                    <Card.Body>
+                      <p className="text-uppercase fs-12 mb-1">Top Folder Share</p>
+                      <h4 className="mb-0">
+                        {insightMetrics.topFolder
+                          ? `${formatNumber(insightMetrics.topFolderShare, 2)}% (${insightMetrics.topFolder.name})`
+                          : '—'}
+                      </h4>
+                      <small className="text-warning-emphasis">Highest allocation concentration</small>
+                    </Card.Body>
+                  </Card>
+                </Col>
+              </Row>
+            </Card.Body>
+          </Card>
+        </Col>
+      </Row>
+
+      <Row className="g-4 mt-1">
         <Col xl={6}>
           <Card className="border-0 shadow-sm h-100">
             <Card.Header className="d-flex justify-content-between align-items-center">
@@ -261,7 +402,7 @@ const Dashboard = () => {
                     <div>Start: {formatBlockTimestamp(proposal.startBlock)}</div>
                     <div>End: {formatBlockTimestamp(proposal.endBlock)}</div>
                   </div>
-                  <div className="mt-3 d-flex justify-content-between align-items-center">
+                  <div className="mt-3 d-flex justify-content-between alignments-center">
                     <span className="text-muted small">Proposer: {truncateAddress(proposal.proposer)}</span>
                     <Button size="sm" variant="soft-secondary" href="/governance/proposals">
                       Review
