@@ -14,10 +14,10 @@ const Login = () => {
     <div className="account-pages p-sm-5 position-relative">
       <Container>
         <Row className="justify-content-center">
-          <Col xxl={9} lg={6}>
+          <Col xxl={9} lg={10}>
             <Card className="overflow-hidden">
               <Row className="g-0">
-                <Col lg={6}>
+                <Col lg={6} className="bg-body">
                   <div className="d-flex flex-column h-100">
                     <AuthLogo />
                     <div className="p-4 my-auto text-center">
@@ -29,7 +29,12 @@ const Login = () => {
                     </div>
                   </div>
                 </Col>
-               
+                <Col lg={6} className="d-none d-lg-block">
+                  <div className="h-100 position-relative">
+                    <Image src={authImg} alt="MetaMask authentication illustration" className="img-fluid h-100 w-100 object-fit-cover" priority />
+                    <div className="position-absolute top-0 start-0 w-100 h-100 bg-dark-subtle opacity-25" />
+                  </div>
+                </Col>
               </Row>
             </Card>
           </Col>
