@@ -1,10 +1,13 @@
 'use client'
-import type { ChildrenType } from '@/types/component-props'
-import { SessionProvider } from 'next-auth/react'
+
 import { useEffect } from 'react'
 import dynamic from 'next/dynamic'
-import { TitleProvider } from '@/context/useTitleContext'
+
 import { NotificationProvider } from '@/context/useNotificationContext'
+import { TitleProvider } from '@/context/useTitleContext'
+import { WalletProvider } from '@/context/useWalletContext'
+import type { ChildrenType } from '@/types/component-props'
+
 const LayoutProvider = dynamic(() => import('@/context/useLayoutContext').then((mod) => mod.LayoutProvider), { ssr: false })
 
 const AppProvidersWrapper = ({ children }: ChildrenType) => {
@@ -31,13 +34,14 @@ const AppProvidersWrapper = ({ children }: ChildrenType) => {
   }, [])
 
   return (
-    <SessionProvider>
+    <WalletProvider>
       <LayoutProvider>
         <TitleProvider>
           <NotificationProvider>{children}</NotificationProvider>
         </TitleProvider>
       </LayoutProvider>
-    </SessionProvider>
+    </WalletProvider>
   )
 }
+
 export default AppProvidersWrapper

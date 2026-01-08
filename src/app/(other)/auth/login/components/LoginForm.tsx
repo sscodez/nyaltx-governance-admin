@@ -1,48 +1,66 @@
 'use client'
 
+import { Button, Alert, Card } from 'react-bootstrap'
 import IconifyIcon from '@/components/wrappers/IconifyIcon'
-import ThirdPartyLogin from '@/components/ThirdPartyLogin'
-import Link from 'next/link'
-import TextFormInput from '@/components/form/TextFormInput'
 import useSignIn from './useSignIn'
-import PasswordFormInput from '@/components/form/PasswordFormInput'
-import { Button, FormCheck } from 'react-bootstrap'
-import { Fragment } from 'react'
 
 const LoginForm = () => {
-  const { control, loading, login } = useSignIn()
+  const { address, connect, connecting, hasProvider, ready, error } = useSignIn()
+
   return (
-    <form onSubmit={login} className="text-start">
-      <TextFormInput control={control} name="email" containerClassName="mb-3" label="Email address" id="email-id" placeholder="Enter your email" />
+    <div className="text-start">
+      <Card className="bg-body-tertiary border-0 mb-3">
+        <Card.Body>
+          <h5 className="fw-semibold mb-2">Connect Wallet</h5>
+          <p className="text-muted mb-0">
+            Use your MetaMask wallet to authenticate. Once connected, you&apos;ll be redirected back to your dashboard.
+          </p>
+        </Card.Body>
+      </Card>
 
-      <PasswordFormInput
-        control={control}
-        name="password"
-        containerClassName="mb-3"
-        placeholder="Enter your password"
-        id="password-id"
-        label={
-          <Fragment>
-            <Link href="/auth/forgot-pass" className="text-muted float-end">
-              <small>Forgot your password?</small>
-            </Link>
-            <label htmlFor="password" className="form-label">
-              Password
-            </label>
-          </Fragment>
-        }
-      />
+      {!ready && (
+        <Alert variant="info" className="mb-3">
+          Initializing MetaMask SDK...
+        </Alert>
+      )}
 
-      <div className="mb-3">
-        <FormCheck label="Remember me" id="sign-in" />
-      </div>
-      <div className="mb-0 text-start">
-        <Button variant="soft-primary" disabled={loading} className="w-100" type="submit">
-          <IconifyIcon icon="ri:login-circle-fill" className="me-1" /> <span className="fw-bold">Log In</span>
-        </Button>
-      </div>
-      <ThirdPartyLogin />
-    </form>
+      {ready && !hasProvider && (
+        <Alert variant="warning" className="mb-3">
+          We couldn&apos;t detect MetaMask in your browser. Install the extension and refresh this page or open this site inside the MetaMask mobile
+          browser.
+        </Alert>
+      )}
+
+      {error && (
+        <Alert variant="danger" className="mb-3">
+          {error}
+        </Alert>
+      )}
+
+      <Button
+        variant={address ? 'success' : 'primary'}
+        className="w-100 py-2"
+        disabled={connecting || !ready || !hasProvider}
+        onClick={connect}>
+        {connecting ? (
+          'Connecting...'
+        ) : address ? (
+          <>
+            <IconifyIcon icon="ri:checkbox-circle-fill" className="me-1" />
+            Wallet Connected
+          </>
+        ) : (
+          <>
+            <IconifyIcon icon="ri:wallet-3-line" className="me-1" />
+            Connect MetaMask
+          </>
+        )}
+      </Button>
+      <p className="text-muted fs-14 mt-3 mb-0">
+        Need help? Open the MetaMask extension and ensure you&apos;re on the account you&apos;d like to use for governance.
+      </p>
+    </div>
   )
 }
+
 export default LoginForm

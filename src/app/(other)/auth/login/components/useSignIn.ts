@@ -1,54 +1,39 @@
 'use client'
-import { signIn } from 'next-auth/react'
-import { useRouter } from 'next/navigation'
-import { useState } from 'react'
-import { useForm } from 'react-hook-form'
-import * as yup from 'yup'
-import { yupResolver } from '@hookform/resolvers/yup'
 
+import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
+
+import { useWalletContext } from '@/context/useWalletContext'
 import { useNotificationContext } from '@/context/useNotificationContext'
 import useQueryParams from '@/hooks/useQueryParams'
 
 const useSignIn = () => {
-  const [loading, setLoading] = useState(false)
+  const { address, connectWallet, connecting, hasProvider, ready } = useWalletContext()
+  const [error, setError] = useState<string | null>(null)
   const { push } = useRouter()
   const { showNotification } = useNotificationContext()
-
   const queryParams = useQueryParams()
 
-  const loginFormSchema = yup.object({
-    email: yup.string().email('Please enter a valid email').required('Please enter your email'),
-    password: yup.string().required('Please enter your password'),
-  })
+  useEffect(() => {
+    if (address) {
+      showNotification({
+        message: 'Wallet connected successfully. Redirecting...',
+        variant: 'success',
+      })
+      push(queryParams['redirectTo'] ?? '/dashboard')
+    }
+  }, [address, push, queryParams, showNotification])
 
-  const { control, handleSubmit } = useForm({
-    resolver: yupResolver(loginFormSchema),
-    defaultValues: {
-      email: 'user@demo.com',
-      password: '123456',
-    },
-  })
+  const connect = async () => {
+    setError(null)
+    try {
+      await connectWallet()
+    } catch (err: any) {
+      setError(err?.message ?? 'Unable to connect wallet. Please try again.')
+    }
+  }
 
-  type LoginFormFields = yup.InferType<typeof loginFormSchema>
-
-  const login = handleSubmit(async (values: LoginFormFields) => {
-    setLoading(true)
-    signIn('credentials', {
-      redirect: false,
-      email: values?.email,
-      password: values?.password,
-    }).then((res) => {
-      if (res?.ok) {
-        push(queryParams['redirectTo'] ?? '/dashboard')
-        showNotification({ message: 'Successfully logged in. Redirecting....', variant: 'success' })
-      } else {
-        showNotification({ message: res?.error ?? '', variant: 'danger' })
-      }
-    })
-    setLoading(false)
-  })
-
-  return { loading, login, control }
+  return { address, connect, connecting, hasProvider, ready, error }
 }
 
 export default useSignIn
