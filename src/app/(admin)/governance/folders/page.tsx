@@ -293,6 +293,37 @@ const FolderRegistryPage = () => {
     }
   }
 
+  const handleFundFolder = async () => {
+    if (!daoService || !fundModal.folder || !fundModal.amount.trim()) return
+    setFunding(true)
+    try {
+      const amountWei = ethers.parseEther(fundModal.amount)
+      await daoService.treasury.sendToFolder(fundModal.folder.folderAddress, amountWei, daoService['signer'] as ethers.Signer)
+      showNotification({ message: 'Funds sent to folder', variant: 'success' })
+      setFundModal({ show: false, folder: null, amount: '' })
+      refreshFolders()
+    } catch (err: any) {
+      showNotification({ message: err?.message || 'Unable to fund folder', variant: 'danger' })
+    } finally {
+      setFunding(false)
+    }
+  }
+
+  const handleApproveFolder = async () => {
+    if (!daoService || !approveModal.folder) return
+    setApproving(true)
+    try {
+      await daoService.treasury.approveFolder(approveModal.folder.folderAddress, daoService['signer'] as ethers.Signer)
+      showNotification({ message: 'Folder approved successfully', variant: 'success' })
+      setApproveModal({ show: false, folder: null })
+      refreshFolders()
+    } catch (err: any) {
+      showNotification({ message: err?.message || 'Unable to approve folder', variant: 'danger' })
+    } finally {
+      setApproving(false)
+    }
+  }
+
   return (
     <>
       <PageTitle title="Folder Registry" />
@@ -560,6 +591,70 @@ const FolderRegistryPage = () => {
           </Button>
           <Button variant="primary" onClick={handleCreateFolder} disabled={!newFolder.name.trim()}>
             Create
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
+      <Modal show={fundModal.show} onHide={() => setFundModal({ show: false, folder: null, amount: '' })} centered>
+        <Modal.Header closeButton>
+          <Modal.Title>Fund Folder</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          {!fundModal.folder ? (
+            <p className="text-muted mb-0">Select a folder to fund.</p>
+          ) : (
+            <Form>
+              <Form.Group className="mb-3">
+                <Form.Label>Folder</Form.Label>
+                <Form.Control value={fundModal.folder.name} disabled />
+              </Form.Group>
+              <Form.Group className="mb-3">
+                <Form.Label>Amount (NYAX)</Form.Label>
+                <Form.Control
+                  type="number"
+                  min={0}
+                  step="0.001"
+                  value={fundModal.amount}
+                  onChange={(e) => setFundModal((prev) => ({ ...prev, amount: e.target.value }))}
+                  placeholder="Enter amount to send"
+                />
+              </Form.Group>
+            </Form>
+          )}
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="soft-secondary" onClick={() => setFundModal({ show: false, folder: null, amount: '' })}>
+            Cancel
+          </Button>
+          <Button
+            variant="success"
+            onClick={handleFundFolder}
+            disabled={!fundModal.folder || !fundModal.amount || funding}
+          >
+            {funding ? 'Sending…' : 'Send Funds'}
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
+      <Modal show={approveModal.show} onHide={() => setApproveModal({ show: false, folder: null })} centered>
+        <Modal.Header closeButton>
+          <Modal.Title>Approve Folder</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          {!approveModal.folder ? (
+            <p className="text-muted mb-0">Select a folder to approve.</p>
+          ) : (
+            <p className="mb-0">
+              Approve <strong>{approveModal.folder.name}</strong> so it can receive NYAX distributions.
+            </p>
+          )}
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="soft-secondary" onClick={() => setApproveModal({ show: false, folder: null })}>
+            Cancel
+          </Button>
+          <Button variant="warning" onClick={handleApproveFolder} disabled={!approveModal.folder || approving}>
+            {approving ? 'Approving…' : 'Approve'}
           </Button>
         </Modal.Footer>
       </Modal>

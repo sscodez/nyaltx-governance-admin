@@ -77,11 +77,11 @@ export const MENU_ITEMS: MenuItemType[] = [
       },
     ],
   },
-  {
-    key: 'extra-pages',
-    label: 'Extra Pages',
-    isTitle: true,
-  },
+  // {
+  //   key: 'extra-pages',
+  //   label: 'Extra Pages',
+  //   isTitle: true,
+  // },
   // {
   //   key: 'pages',
   //   label: 'Pages',
