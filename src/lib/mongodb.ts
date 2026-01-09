@@ -1,11 +1,9 @@
 import { MongoClient, MongoClientOptions } from 'mongodb'
 
+
 const uri = process.env.MONGODB_URI
 const dbName = process.env.MONGODB_DB || 'nyaltx_admin'
-
-if (!uri) {
-  throw new Error('Missing MONGODB_URI environment variable')
-}
+const hasMongoEnv = Boolean(uri)
 
 let client: MongoClient
 let clientPromise: Promise<MongoClient>
@@ -17,20 +15,27 @@ declare global {
 
 const options: MongoClientOptions = {}
 
-if (process.env.NODE_ENV === 'development') {
-  if (!global._mongoClientPromise) {
-    client = new MongoClient(uri, options)
-    global._mongoClientPromise = client.connect()
+if (hasMongoEnv) {
+  if (process.env.NODE_ENV === 'development') {
+    if (!global._mongoClientPromise) {
+      client = new MongoClient(uri as string, options)
+      global._mongoClientPromise = client.connect()
+    }
+    clientPromise = global._mongoClientPromise
+  } else {
+    client = new MongoClient(uri as string, options)
+    clientPromise = client.connect()
   }
-  clientPromise = global._mongoClientPromise
 } else {
-  client = new MongoClient(uri, options)
-  clientPromise = client.connect()
+  clientPromise = Promise.reject(new Error('Missing MONGODB_URI environment variable'))
 }
 
 export const getDb = async () => {
+  if (!hasMongoEnv) {
+    throw new Error('Missing MONGODB_URI environment variable')
+  }
   const mongoClient = await clientPromise
   return mongoClient.db(dbName)
 }
 
-export default clientPromise
+export default hasMongoEnv ? clientPromise : undefined
