@@ -16,13 +16,16 @@ const defaultProposalForm = {
   description: '',
 }
 
-const statusVariantMap: Record<ProposalData['status'], { bg: string; text: string; icon: string; label: string }> = {
-  active: { bg: 'soft-primary', text: 'primary', icon: 'solar:flash-bold-duotone', label: 'Active' },
-  succeeded: { bg: 'soft-success', text: 'success', icon: 'solar:check-ring-round-bold-duotone', label: 'Succeeded' },
-  defeated: { bg: 'soft-danger', text: 'danger', icon: 'solar:close-circle-line-duotone', label: 'Defeated' },
-  queued: { bg: 'soft-warning', text: 'warning', icon: 'solar:calendar-line-duotone', label: 'Queued' },
-  executed: { bg: 'soft-info', text: 'info', icon: 'solar:rocket-bold-duotone', label: 'Executed' },
-  canceled: { bg: 'soft-secondary', text: 'secondary', icon: 'solar:shield-cross-bold-duotone', label: 'Canceled' },
+const statusVariantMap: Record<
+  ProposalData['status'],
+  { bg: string; text: string; icon: string; label: string; accent: string; accentLabel: string }
+> = {
+  active: { bg: 'soft-primary', text: 'primary', icon: 'solar:flash-bold-duotone', label: 'Active', accent: 'info', accentLabel: 'In progress' },
+  succeeded: { bg: 'soft-success', text: 'success', icon: 'solar:check-ring-round-bold-duotone', label: 'Succeeded', accent: 'success', accentLabel: 'Executed' },
+  defeated: { bg: 'soft-danger', text: 'danger', icon: 'solar:close-circle-line-duotone', label: 'Defeated', accent: 'danger', accentLabel: 'Failed' },
+  queued: { bg: 'soft-warning', text: 'warning', icon: 'solar:calendar-line-duotone', label: 'Queued', accent: 'warning', accentLabel: 'Queued' },
+  executed: { bg: 'soft-info', text: 'info', icon: 'solar:rocket-bold-duotone', label: 'Executed', accent: 'success', accentLabel: 'Executed' },
+  canceled: { bg: 'soft-secondary', text: 'secondary', icon: 'solar:shield-cross-bold-duotone', label: 'Canceled', accent: 'secondary', accentLabel: 'Canceled' },
 }
 const STATUS_ORDER: ProposalData['status'][] = ['active', 'succeeded', 'queued', 'executed', 'defeated', 'canceled']
 
@@ -598,10 +601,19 @@ const ProposalsPage = () => {
                   </div>
                   <div className="mt-auto d-flex justify-content-between align-items-center">
                     <div className="text-muted small">
-                      Updated status counts:{' '}
-                      {Object.entries(statusCounts)
-                        .map(([status, count]) => `${status} (${count})`)
-                        .join(', ') || '—'}
+                      Created by <strong>{truncateAddress(proposal.proposer)}</strong>
+                      {Boolean(blockTimestamps[proposal.startBlock]) && (
+                        <>
+                          {' '}
+                          · <span>Start: {new Date((blockTimestamps[proposal.startBlock] ?? 0) * 1000).toLocaleString()}</span>
+                        </>
+                      )}
+                      {Boolean(blockTimestamps[proposal.endBlock]) && (
+                        <>
+                          {' '}
+                          · <span>End: {new Date((blockTimestamps[proposal.endBlock] ?? 0) * 1000).toLocaleString()}</span>
+                        </>
+                      )}
                     </div>
                     <Button size="sm" variant="soft-primary" onClick={() => openDetail(proposal)}>
                       View

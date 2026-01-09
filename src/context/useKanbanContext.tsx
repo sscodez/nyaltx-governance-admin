@@ -5,8 +5,6 @@ import { createContext, startTransition, use, useCallback, useEffect, useMemo, u
 import { useForm } from 'react-hook-form'
 import * as yup from 'yup'
 
-import avatar1 from '@/assets/images/users/avatar-1.jpg'
-
 import type { ChildrenType } from '@/types/component-props'
 import type { KanbanDialogType, KanbanType } from '@/types/context'
 import type { KanbanSectionType, KanbanTaskType } from '@/types/data'
@@ -14,9 +12,8 @@ import type { KanbanSectionType, KanbanTaskType } from '@/types/data'
 const ThemeContext = createContext<KanbanType | undefined>(undefined)
 
 export const kanbanTaskSchema = yup.object({
-  title: yup.string().required('Please enter project title'),
-  description: yup.string().required('Please enter project description'),
-  totalTasks: yup.number().required('Please enter number of tasks'),
+  title: yup.string().required('Please enter task title'),
+  description: yup.string().optional(),
 })
 
 export type TaskFormFields = yup.InferType<typeof kanbanTaskSchema>
@@ -71,11 +68,8 @@ const KanbanProvider = ({ children }: ChildrenType) => {
 
   const emptyTaskForm = useCallback(() => {
     newTaskReset({
-      title: undefined,
-      description: undefined,
-      // priority: undefined,
-      // tags: undefined,
-      totalTasks: undefined,
+      title: '',
+      description: '',
     })
   }, [newTaskReset])
 
@@ -88,9 +82,6 @@ const KanbanProvider = ({ children }: ChildrenType) => {
           newTaskReset({
             title: foundTask.title,
             description: foundTask.description,
-            // priority: foundTask.priority,
-            // tags: foundTask.tags ? foundTask.tags[0] : 'API',
-            totalTasks: foundTask.totalTasks,
           })
           startTransition(() => {
             setActiveTaskId(taskId)
@@ -149,7 +140,7 @@ const KanbanProvider = ({ children }: ChildrenType) => {
         share: task.share ?? 0,
         commentsCount: task.commentsCount ?? 0,
         progress: task.progress ?? undefined,
-        members: [avatar1],
+        members: [],
       })),
     [],
   )
@@ -221,21 +212,19 @@ const KanbanProvider = ({ children }: ChildrenType) => {
     const formData: TaskFormFields = {
       title: values.title,
       description: values.description,
-      // priority: values.priority,
-      // tags: values.tags,
-      totalTasks: values.totalTasks,
     }
 
     if (!activeSectionId) return
 
     const optimisticId = `temp-${Date.now()}`
     const newTask: KanbanTaskType = {
-      ...formData,
-      sectionId: activeSectionId,
       id: optimisticId,
+      sectionId: activeSectionId,
+      title: formData.title || 'Untitled Task',
+      description: formData.description || '',
       views: 0,
-      members: [avatar1],
-      share: 10,
+      members: [],
+      share: 0,
       variant: 'success',
       commentsCount: 0,
     }
@@ -275,15 +264,14 @@ const KanbanProvider = ({ children }: ChildrenType) => {
 
     if (activeSectionId && activeTaskId) {
       const newTask: KanbanTaskType = {
-        ...formData,
-        views: 0,
-        members: [avatar1],
-        share: 10,
-        variant: 'success',
-        // tags: [formData.tags],
-        sectionId: activeSectionId,
         id: activeTaskId,
-        // completedTasks: 0,
+        sectionId: activeSectionId,
+        title: formData.title || 'Untitled Task',
+        description: formData.description || '',
+        views: 0,
+        members: [],
+        share: 0,
+        variant: 'success',
         commentsCount: 0,
       }
       setTasks(tasks.map((t) => (t.id === activeTaskId ? newTask : t)))
