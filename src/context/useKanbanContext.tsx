@@ -259,7 +259,6 @@ const KanbanProvider = ({ children }: ChildrenType) => {
       description: values.description,
       // priority: values.priority,
       // tags: values.tags,
-      totalTasks: values.totalTasks,
     }
 
     if (activeSectionId && activeTaskId) {
