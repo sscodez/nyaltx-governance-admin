@@ -50,6 +50,14 @@ type AdminTreasuryStats = {
   isPaused: boolean
 }
 
+type TreasuryTransferRow = {
+  folder: string
+  amount: string
+  blockNumber: number
+  transactionHash: string
+  timestamp: number
+}
+
 const Dashboard = () => {
   const { daoService, loading } = useDaoService()
   const { showNotification } = useNotificationContext()
@@ -60,16 +68,18 @@ const Dashboard = () => {
   const [blockTimestamps, setBlockTimestamps] = useState<Record<number, number>>({})
   const [fetching, setFetching] = useState(false)
   const [treasuryStats, setTreasuryStats] = useState<AdminTreasuryStats | null>(null)
+  const [recentTransfers, setRecentTransfers] = useState<TreasuryTransferRow[]>([])
 
   const loadDashboard = useCallback(async () => {
     if (!daoService) return
     setFetching(true)
     try {
-      const [statsResponse, proposalsResponse, foldersResponse, treasuryResponse] = await Promise.all([
+      const [statsResponse, proposalsResponse, foldersResponse, treasuryResponse, transfersResponse] = await Promise.all([
         daoService.governance.getGovernanceStats(),
         daoService.governance.getAllProposals(5),
         daoService.folders.getAllFolders(),
         daoService.treasury.getTreasuryStats(),
+        daoService.treasury.getRecentTransfers(8),
       ])
       setGovStats(statsResponse)
       setRecentProposals(proposalsResponse)
@@ -80,6 +90,7 @@ const Dashboard = () => {
         approvedFolders: treasuryResponse.approvedFolders,
         isPaused: treasuryResponse.isPaused,
       })
+      setRecentTransfers(transfersResponse)
     } catch (error: any) {
       showNotification({ message: error?.message || 'Unable to load dashboard insights', variant: 'danger' })
     } finally {
@@ -152,6 +163,11 @@ const Dashboard = () => {
     },
     [blockTimestamps],
   )
+
+  const formatTransferTimestamp = useCallback((timestamp?: number) => {
+    if (!timestamp) return 'Pending'
+    return new Date(timestamp * 1000).toLocaleString()
+  }, [])
 
   const folderInsights = useMemo(() => {
     if (!folders.length) {
@@ -536,6 +552,63 @@ const Dashboard = () => {
                   </div>
                 )
               })}
+            </Card.Body>
+          </Card>
+        </Col>
+      </Row>
+
+      <Row className="g-4 mt-1">
+        <Col xl={12}>
+          <Card className="border-0 shadow-sm h-100">
+            <Card.Header className="d-flex justify-content-between align-items-center flex-wrap gap-2">
+              <div>
+                <h5 className="mb-0">Recent Treasury Transfers</h5>
+                <small className="text-muted">Live on-chain disbursements from the DAO treasury</small>
+              </div>
+              <Button size="sm" variant="soft-primary" href="/treasury" target="_blank" rel="noopener">
+                View treasury
+              </Button>
+            </Card.Header>
+            <Card.Body className="table-responsive">
+              <table className="table table-sm align-middle mb-0">
+                <thead>
+                  <tr>
+                    <th scope="col">Folder</th>
+                    <th scope="col">Amount (NYAX)</th>
+                    <th scope="col">Block</th>
+                    <th scope="col">Timestamp</th>
+                    <th scope="col">Tx Hash</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {recentTransfers.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} className="text-center text-muted py-4">
+                        No treasury movements detected in the latest block window.
+                      </td>
+                    </tr>
+                  ) : (
+                    recentTransfers.map((transfer) => (
+                      <tr key={`${transfer.transactionHash}-${transfer.blockNumber}`}>
+                        <td className="text-monospace">{truncateAddress(transfer.folder)}</td>
+                        <td>{Number(transfer.amount).toLocaleString()}</td>
+                        <td className="text-muted">#{transfer.blockNumber}</td>
+                        <td>{formatTransferTimestamp(transfer.timestamp)}</td>
+                        <td>
+                          <a
+                            href={`${NETWORK_CONFIG.blockExplorer}/tx/${transfer.transactionHash}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-decoration-underline"
+                          >
+                            {`${transfer.transactionHash.slice(0, 6)}…${transfer.transactionHash.slice(-4)}`}
+                          </a>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
             </Card.Body>
           </Card>
         </Col>
